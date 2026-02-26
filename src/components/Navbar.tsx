@@ -1,0 +1,167 @@
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  Home, 
+  TrendingUp, 
+  BookOpen, 
+  Info, 
+  Menu, 
+  X, 
+  Globe, 
+  Moon, 
+  Sun,
+  ChevronRight,
+  ShieldCheck
+} from 'lucide-react';
+import { Language } from '../types';
+import { TRANSLATIONS } from '../constants';
+import { cn } from '../types';
+
+interface NavbarProps {
+  lang: Language;
+  setLang: (lang: Language) => void;
+  currentPage: string;
+  setCurrentPage: (page: string) => void;
+  isDark: boolean;
+  setIsDark: (dark: boolean) => void;
+}
+
+export const Navbar: React.FC<NavbarProps> = ({ lang, setLang, currentPage, setCurrentPage, isDark, setIsDark }) => {
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const t = TRANSLATIONS[lang];
+
+  useEffect(() => {
+    const handleScroll = () => setIsScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const navLinks = [
+    { id: 'home', label: t.home, icon: Home },
+    { id: 'predictor', label: t.predictor, icon: TrendingUp },
+    { id: 'education', label: t.education, icon: BookOpen },
+    { id: 'about', label: t.about, icon: Info },
+  ];
+
+  return (
+    <nav className={cn(
+      "fixed top-0 left-0 right-0 z-50 transition-all duration-300 px-4 py-3",
+      isScrolled ? "bg-navy-900/80 backdrop-blur-md border-b border-white/10 py-2" : "bg-transparent"
+    )}>
+      <div className="max-w-7xl mx-auto flex items-center justify-between">
+        {/* Logo */}
+        <div 
+          className="flex items-center gap-2 cursor-pointer group"
+          onClick={() => setCurrentPage('home')}
+        >
+          <div className="w-10 h-10 bg-emerald-600 rounded-lg flex items-center justify-center shadow-lg shadow-emerald-900/40 group-hover:scale-110 transition-transform">
+            <TrendingUp className="text-white w-6 h-6" />
+          </div>
+          <span className="text-xl font-bold tracking-tight hidden sm:block">
+            IPO <span className="text-emerald-500">Predictor</span> <span className="text-gold-400">Nepal</span>
+          </span>
+        </div>
+
+        {/* Desktop Nav */}
+        <div className="hidden md:flex items-center gap-1">
+          {navLinks.map((link) => (
+            <button
+              key={link.id}
+              onClick={() => setCurrentPage(link.id)}
+              className={cn(
+                "px-4 py-2 rounded-lg text-sm font-medium transition-colors relative flex items-center gap-2",
+                currentPage === link.id ? "text-emerald-400" : "text-slate-400 hover:text-white hover:bg-white/5"
+              )}
+            >
+              <link.icon className="w-4 h-4" />
+              {link.label}
+              {currentPage === link.id && (
+                <motion.div 
+                  layoutId="nav-underline"
+                  className="absolute bottom-0 left-2 right-2 h-0.5 bg-emerald-500 rounded-full"
+                />
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* Controls */}
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={() => setLang(lang === 'EN' ? 'NP' : 'EN')}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold transition-all"
+          >
+            <Globe className="w-3.5 h-3.5" />
+            {lang === 'EN' ? 'NP' : 'EN'}
+          </button>
+          
+          <button 
+            onClick={() => setIsDark(!isDark)}
+            className="p-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 transition-all"
+          >
+            {isDark ? <Sun className="w-4 h-4 text-gold-400" /> : <Moon className="w-4 h-4 text-slate-400" />}
+          </button>
+
+          <button 
+            className="md:hidden p-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10"
+            onClick={() => setIsMobileMenuOpen(true)}
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile Menu */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.div
+            initial={{ x: '100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '100%' }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            className="fixed inset-0 z-[60] bg-navy-900 p-6 flex flex-col"
+          >
+            <div className="flex items-center justify-between mb-8">
+              <span className="text-xl font-bold">Menu</span>
+              <button 
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="p-2 rounded-lg bg-white/5"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-4">
+              {navLinks.map((link) => (
+                <button
+                  key={link.id}
+                  onClick={() => {
+                    setCurrentPage(link.id);
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className={cn(
+                    "flex items-center gap-4 p-4 rounded-xl text-lg font-semibold transition-all",
+                    currentPage === link.id ? "bg-emerald-600/20 text-emerald-400 border border-emerald-500/30" : "bg-white/5 text-slate-300"
+                  )}
+                >
+                  <link.icon className="w-6 h-6" />
+                  {link.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="mt-auto p-6 bg-white/5 rounded-2xl border border-white/10">
+              <p className="text-sm text-slate-400 mb-4">{t.disclaimer}</p>
+              <div className="flex gap-4">
+                <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center">f</div>
+                <div className="w-10 h-10 rounded-full bg-sky-500 flex items-center justify-center">t</div>
+                <div className="w-10 h-10 rounded-full bg-red-600 flex items-center justify-center">y</div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </nav>
+  );
+};
