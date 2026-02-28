@@ -9,24 +9,12 @@ import {
   X, 
   Globe, 
   Moon, 
-  Sun,
-  ChevronRight,
-  ShieldCheck
+  Sun
 } from 'lucide-react';
-import { Language } from '../types';
 import { TRANSLATIONS } from '../constants';
 import { cn } from '../types';
 
-interface NavbarProps {
-  lang: Language;
-  setLang: (lang: Language) => void;
-  currentPage: string;
-  setCurrentPage: (page: string) => void;
-  isDark: boolean;
-  setIsDark: (dark: boolean) => void;
-}
-
-export const Navbar: React.FC<NavbarProps> = ({ lang, setLang, currentPage, setCurrentPage, isDark, setIsDark }) => {
+export const Navbar = ({ lang, setLang, currentPage, setCurrentPage, isDark, setIsDark }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const t = TRANSLATIONS[lang];

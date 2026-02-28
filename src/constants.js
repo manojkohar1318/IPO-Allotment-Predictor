@@ -1,6 +1,4 @@
-import { IPO, Sector } from './types';
-
-export const SECTORS: Sector[] = [
+export const SECTORS = [
   'Hydropower',
   'Microfinance',
   'Insurance',
@@ -12,7 +10,7 @@ export const SECTORS: Sector[] = [
   'Others'
 ];
 
-export const BASE_RATES: Record<Sector, number> = {
+export const BASE_RATES = {
   'Hydropower': 70,
   'Microfinance': 45,
   'Insurance': 55,
@@ -24,7 +22,7 @@ export const BASE_RATES: Record<Sector, number> = {
   'Others': 50
 };
 
-export const DUMMY_IPOS: IPO[] = [
+export const DUMMY_IPOS = [
   {
     id: '1',
     name: 'Upper Tamakoshi Hydropower',

@@ -16,8 +16,6 @@ import {
   Instagram,
   Mail
 } from 'lucide-react';
-import { HashRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
-import { Language, IPO } from './types';
 import { TRANSLATIONS } from './constants';
 import { Navbar } from './components/Navbar';
 import { Ticker } from './components/Ticker';
@@ -30,24 +28,25 @@ import { cn } from './types';
 import { DUMMY_IPOS } from './constants';
 
 function AppContent() {
-  const [lang, setLang] = useState<Language>('EN');
+  const [lang, setLang] = useState('EN');
   const [currentPage, setCurrentPage] = useState('home');
   const [showAlert, setShowAlert] = useState(true);
   const [isDark, setIsDark] = useState(true);
   const [timeLeft, setTimeLeft] = useState({ d: 2, h: 14, m: 45, s: 30 });
-  const [ipos, setIpos] = useState<IPO[]>(DUMMY_IPOS);
+  const [ipos, setIpos] = useState(DUMMY_IPOS);
   const t = TRANSLATIONS[lang];
-  const navigate = useNavigate();
-  const location = useLocation();
 
-  // Sync state with URL for admin page
+  // Check for hidden admin page via URL hash
   useEffect(() => {
-    if (location.pathname === '/adminpage-1318') {
-      setCurrentPage('admin');
-    } else if (currentPage === 'admin') {
-      setCurrentPage('home');
-    }
-  }, [location.pathname]);
+    const handleHashChange = () => {
+      if (window.location.hash === '#/adminpage-1318') {
+        setCurrentPage('admin');
+      }
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    handleHashChange(); // Initial check
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
 
   // Handle theme
   useEffect(() => {
@@ -326,12 +325,5 @@ function AppContent() {
 }
 
 export default function App() {
-  return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<AppContent />} />
-        <Route path="/adminpage-1318" element={<AppContent />} />
-      </Routes>
-    </Router>
-  );
+  return <AppContent />;
 }

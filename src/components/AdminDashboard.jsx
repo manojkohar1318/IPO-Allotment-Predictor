@@ -10,22 +10,15 @@ import {
   AlertCircle,
   Database
 } from 'lucide-react';
-import { Language, IPO, Sector, Category } from '../types';
 import { SECTORS } from '../constants';
 
-interface AdminDashboardProps {
-  lang: Language;
-  ipos: IPO[];
-  setIpos: React.Dispatch<React.SetStateAction<IPO[]>>;
-}
-
-export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, ipos, setIpos }) => {
+export const AdminDashboard = ({ lang, ipos, setIpos }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingIpo, setEditingIpo] = useState<IPO | null>(null);
+  const [editingIpo, setEditingIpo] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState(null);
 
-  const [formData, setFormData] = useState<Partial<IPO>>({
+  const [formData, setFormData] = useState({
     name: '',
     nameNP: '',
     sector: 'Commercial Bank',
@@ -37,7 +30,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, ipos, setI
     closeDate: ''
   });
 
-  const handleOpenModal = (ipo?: IPO) => {
+  const handleOpenModal = (ipo) => {
     if (ipo) {
       setEditingIpo(ipo);
       setFormData(ipo);
@@ -58,18 +51,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, ipos, setI
     setIsModalOpen(true);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     setError(null);
     
     try {
       if (editingIpo) {
-        setIpos(prev => prev.map(item => item.id === editingIpo.id ? { ...item, ...formData } as IPO : item));
+        setIpos(prev => prev.map(item => item.id === editingIpo.id ? { ...item, ...formData } : item));
       } else {
-        const newIpo: IPO = {
+        const newIpo = {
           ...formData,
           id: Math.random().toString(36).substr(2, 9),
-        } as IPO;
+        };
         setIpos(prev => [newIpo, ...prev]);
       }
       setIsModalOpen(false);
@@ -79,7 +72,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, ipos, setI
     }
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = (id) => {
     if (!window.confirm('Are you sure you want to delete this IPO?')) return;
     setIpos(prev => prev.filter(item => item.id !== id));
   };
@@ -241,7 +234,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, ipos, setI
                     <label className="text-xs font-bold text-slate-500 uppercase">Sector</label>
                     <select 
                       value={formData.sector}
-                      onChange={(e) => setFormData({...formData, sector: e.target.value as Sector})}
+                      onChange={(e) => setFormData({...formData, sector: e.target.value})}
                       className="w-full bg-navy-900 border border-white/10 rounded-xl p-4 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
                     >
                       {SECTORS.map(s => <option key={s} value={s}>{s}</option>)}
@@ -251,7 +244,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, ipos, setI
                     <label className="text-xs font-bold text-slate-500 uppercase">Type</label>
                     <select 
                       value={formData.type}
-                      onChange={(e) => setFormData({...formData, type: e.target.value as any})}
+                      onChange={(e) => setFormData({...formData, type: e.target.value})}
                       className="w-full bg-navy-900 border border-white/10 rounded-xl p-4 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
                     >
                       <option value="IPO">IPO</option>
@@ -264,7 +257,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, ipos, setI
                     <label className="text-xs font-bold text-slate-500 uppercase">Category</label>
                     <select 
                       value={formData.category}
-                      onChange={(e) => setFormData({...formData, category: e.target.value as Category})}
+                      onChange={(e) => setFormData({...formData, category: e.target.value})}
                       className="w-full bg-navy-900 border border-white/10 rounded-xl p-4 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
                     >
                       <option value="General Public">General Public</option>

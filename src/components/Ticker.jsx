@@ -1,12 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { IPO } from '../types';
 
-interface TickerProps {
-  ipos: IPO[];
-}
-
-export const Ticker: React.FC<TickerProps> = ({ ipos }) => {
+export const Ticker = ({ ipos }) => {
   // Duplicate items for seamless loop
   const tickerItems = [...ipos, ...ipos];
 

@@ -13,18 +13,12 @@ import {
   Download,
   Loader2
 } from 'lucide-react';
-import { Language, IPO, PredictionResult } from '../types';
 import { TRANSLATIONS } from '../constants';
 import { cn } from '../types';
 import ReactConfetti from 'react-confetti';
 
-interface PredictorProps {
-  lang: Language;
-  ipos: IPO[];
-}
-
-export const Predictor: React.FC<PredictorProps> = ({ lang, ipos }) => {
-  const [step, setStep] = useState<'form' | 'result'>('form');
+export const Predictor = ({ lang, ipos }) => {
+  const [step, setStep] = useState('form');
   const [loading, setLoading] = useState(false);
   
   // Form State
@@ -34,7 +28,7 @@ export const Predictor: React.FC<PredictorProps> = ({ lang, ipos }) => {
   const [isFirstTime, setIsFirstTime] = useState(false);
   const [kitta, setKitta] = useState('10');
   
-  const [result, setResult] = useState<PredictionResult | null>(null);
+  const [result, setResult] = useState(null);
   const t = TRANSLATIONS[lang];
 
   // Load saved data
@@ -64,8 +58,6 @@ export const Predictor: React.FC<PredictorProps> = ({ lang, ipos }) => {
       const numAccounts = parseInt(accounts);
       
       // Basic probability logic: 1 / oversubscription per account
-      // If oversubscription is 10x, chance is 10% per account.
-      // Probability of getting at least one allotment: 1 - (1 - p)^n
       const pPerAccount = Math.min(1, 1 / oversub);
       const totalProb = (1 - Math.pow(1 - pPerAccount, numAccounts)) * 100;
       

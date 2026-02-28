@@ -9,15 +9,9 @@ import {
   MapPin,
   ArrowRight
 } from 'lucide-react';
-import { Language } from '../types';
 import { TRANSLATIONS } from '../constants';
 
-interface FooterProps {
-  lang: Language;
-  setCurrentPage: (page: string) => void;
-}
-
-export const Footer: React.FC<FooterProps> = ({ lang, setCurrentPage }) => {
+export const Footer = ({ lang, setCurrentPage }) => {
   const t = TRANSLATIONS[lang];
 
   return (
@@ -57,7 +51,7 @@ export const Footer: React.FC<FooterProps> = ({ lang, setCurrentPage }) => {
                     onClick={() => setCurrentPage(id)}
                     className="text-slate-400 hover:text-emerald-400 transition-colors capitalize"
                   >
-                    {t[id as keyof typeof t]}
+                    {t[id]}
                   </button>
                 </li>
               ))}
