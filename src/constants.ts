@@ -24,6 +24,57 @@ export const BASE_RATES: Record<Sector, number> = {
   'Others': 50
 };
 
+export const DUMMY_IPOS: IPO[] = [
+  {
+    id: '1',
+    name: 'Upper Tamakoshi Hydropower',
+    nameNP: 'माथिल्लो तामाकोशी जलविद्युत',
+    sector: 'Hydropower',
+    type: 'IPO',
+    category: 'General Public',
+    issuedUnits: 15000000,
+    price: 100,
+    openDate: '2023-10-15',
+    closeDate: '2023-10-19',
+    oversubscription: 4.5,
+    allotmentRate: 85,
+    listingPrice: 224,
+    listingGain: 124
+  },
+  {
+    id: '2',
+    name: 'Nabil Bank Debenture 2085',
+    nameNP: 'नबिल बैंक ऋणपत्र २०८५',
+    sector: 'Commercial Bank',
+    type: 'Debenture',
+    category: 'General Public',
+    issuedUnits: 3000000,
+    price: 1000,
+    openDate: '2024-01-05',
+    closeDate: '2024-01-10',
+    oversubscription: 1.2,
+    allotmentRate: 100,
+    listingPrice: 1000,
+    listingGain: 0
+  },
+  {
+    id: '3',
+    name: 'Sarbottam Cement',
+    nameNP: 'सर्वोत्तम सिमेन्ट',
+    sector: 'Manufacturing',
+    type: 'IPO',
+    category: 'General Public',
+    issuedUnits: 6000000,
+    price: 360,
+    openDate: '2024-01-25',
+    closeDate: '2024-01-30',
+    oversubscription: 15.5,
+    allotmentRate: 12,
+    listingPrice: 520,
+    listingGain: 44
+  }
+];
+
 export const TRANSLATIONS = {
   EN: {
     home: 'Home',

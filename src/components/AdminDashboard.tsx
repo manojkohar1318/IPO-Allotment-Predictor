@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Plus, 
@@ -8,30 +8,18 @@ import {
   X, 
   Save, 
   AlertCircle,
-  Loader2,
   Database
 } from 'lucide-react';
 import { Language, IPO, Sector, Category } from '../types';
 import { SECTORS } from '../constants';
-import { db } from '../lib/firebase';
-import { 
-  collection, 
-  addDoc, 
-  updateDoc, 
-  deleteDoc, 
-  doc, 
-  onSnapshot, 
-  query, 
-  orderBy 
-} from 'firebase/firestore';
 
 interface AdminDashboardProps {
   lang: Language;
+  ipos: IPO[];
+  setIpos: React.Dispatch<React.SetStateAction<IPO[]>>;
 }
 
-export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang }) => {
-  const [ipos, setIpos] = useState<IPO[]>([]);
-  const [loading, setLoading] = useState(true);
+export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, ipos, setIpos }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingIpo, setEditingIpo] = useState<IPO | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -40,7 +28,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang }) => {
   const [formData, setFormData] = useState<Partial<IPO>>({
     name: '',
     nameNP: '',
-    sector: 'Commercial Banks',
+    sector: 'Commercial Bank',
     type: 'IPO',
     category: 'General Public',
     issuedUnits: 0,
@@ -48,24 +36,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang }) => {
     openDate: '',
     closeDate: ''
   });
-
-  // Real-time Firestore Sync
-  useEffect(() => {
-    const q = query(collection(db, 'ipos'), orderBy('openDate', 'desc'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const ipoList = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as IPO[];
-      setIpos(ipoList);
-      setLoading(false);
-    }, (err) => {
-      console.error(err);
-      setError("Failed to connect to Firestore. Please check your configuration.");
-      setLoading(false);
-    });
-    return () => unsubscribe();
-  }, []);
 
   const handleOpenModal = (ipo?: IPO) => {
     if (ipo) {
@@ -76,7 +46,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang }) => {
       setFormData({
         name: '',
         nameNP: '',
-        sector: 'Commercial Banks',
+        sector: 'Commercial Bank',
         type: 'IPO',
         category: 'General Public',
         issuedUnits: 0,
@@ -88,17 +58,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang }) => {
     setIsModalOpen(true);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     
     try {
       if (editingIpo) {
-        const ipoRef = doc(db, 'ipos', editingIpo.id);
-        const { id, ...data } = formData;
-        await updateDoc(ipoRef, data as any);
+        setIpos(prev => prev.map(item => item.id === editingIpo.id ? { ...item, ...formData } as IPO : item));
       } else {
-        await addDoc(collection(db, 'ipos'), formData);
+        const newIpo: IPO = {
+          ...formData,
+          id: Math.random().toString(36).substr(2, 9),
+        } as IPO;
+        setIpos(prev => [newIpo, ...prev]);
       }
       setIsModalOpen(false);
     } catch (err) {
@@ -107,29 +79,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang }) => {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = (id: string) => {
     if (!window.confirm('Are you sure you want to delete this IPO?')) return;
-    try {
-      await deleteDoc(doc(db, 'ipos', id));
-    } catch (err) {
-      console.error(err);
-      setError("Failed to delete IPO.");
-    }
+    setIpos(prev => prev.filter(item => item.id !== id));
   };
 
   const filteredIpos = ipos.filter(ipo => 
     ipo.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     ipo.nameNP.includes(searchQuery)
   );
-
-  if (loading) {
-    return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4">
-        <Loader2 className="w-12 h-12 text-emerald-500 animate-spin" />
-        <p className="text-slate-400 font-bold animate-pulse">Connecting to Database...</p>
-      </div>
-    );
-  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-12">
@@ -138,7 +96,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang }) => {
           <h1 className="text-4xl font-black mb-2 flex items-center gap-3">
             <Database className="text-emerald-500" /> Admin Panel
           </h1>
-          <p className="text-slate-400">Manage IPO data and site content in real-time via Firestore.</p>
+          <p className="text-slate-400">Manage IPO data and site content (Local Session Only).</p>
         </div>
         <button 
           onClick={() => handleOpenModal()}
@@ -256,7 +214,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang }) => {
                 </button>
               </div>
               
-              <form onSubmit={handleSubmit} className="p-8 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
+              <form onSubmit={handleSubmit} className="p-8 space-y-6 max-h-[70vh] overflow-y-auto">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-slate-500 uppercase">Company Name (EN)</label>

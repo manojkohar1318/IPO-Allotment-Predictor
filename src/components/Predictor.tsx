@@ -17,18 +17,15 @@ import { Language, IPO, PredictionResult } from '../types';
 import { TRANSLATIONS } from '../constants';
 import { cn } from '../types';
 import ReactConfetti from 'react-confetti';
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
-import { db } from '../lib/firebase';
 
 interface PredictorProps {
   lang: Language;
+  ipos: IPO[];
 }
 
-export const Predictor: React.FC<PredictorProps> = ({ lang }) => {
+export const Predictor: React.FC<PredictorProps> = ({ lang, ipos }) => {
   const [step, setStep] = useState<'form' | 'result'>('form');
   const [loading, setLoading] = useState(false);
-  const [ipos, setIpos] = useState<IPO[]>([]);
-  const [fetchingIpos, setFetchingIpos] = useState(true);
   
   // Form State
   const [selectedIpoId, setSelectedIpoId] = useState('');
@@ -39,23 +36,6 @@ export const Predictor: React.FC<PredictorProps> = ({ lang }) => {
   
   const [result, setResult] = useState<PredictionResult | null>(null);
   const t = TRANSLATIONS[lang];
-
-  // Real-time Firestore Sync for IPO selection
-  useEffect(() => {
-    const q = query(collection(db, 'ipos'), orderBy('openDate', 'desc'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const ipoList = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as IPO[];
-      setIpos(ipoList);
-      setFetchingIpos(false);
-    }, (err) => {
-      console.error(err);
-      setFetchingIpos(false);
-    });
-    return () => unsubscribe();
-  }, []);
 
   // Load saved data
   useEffect(() => {
@@ -80,7 +60,6 @@ export const Predictor: React.FC<PredictorProps> = ({ lang }) => {
     
     // Simulate complex calculation
     setTimeout(() => {
-      const selectedIpo = ipos.find(i => i.id === selectedIpoId);
       const oversub = parseFloat(oversubscription);
       const numAccounts = parseInt(accounts);
       
@@ -122,15 +101,6 @@ export const Predictor: React.FC<PredictorProps> = ({ lang }) => {
       setStep('result');
     }, 1500);
   };
-
-  if (fetchingIpos) {
-    return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4">
-        <Loader2 className="w-12 h-12 text-emerald-500 animate-spin" />
-        <p className="text-slate-400 font-bold animate-pulse">Loading Companies...</p>
-      </div>
-    );
-  }
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-12">

@@ -16,7 +16,7 @@ import {
   Instagram,
   Mail
 } from 'lucide-react';
-import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { Language, IPO } from './types';
 import { TRANSLATIONS } from './constants';
 import { Navbar } from './components/Navbar';
@@ -27,8 +27,7 @@ import { AboutSection } from './components/AboutSection';
 import { AdminDashboard } from './components/AdminDashboard';
 import { Footer } from './components/Footer';
 import { cn } from './types';
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
-import { db } from './lib/firebase';
+import { DUMMY_IPOS } from './constants';
 
 function AppContent() {
   const [lang, setLang] = useState<Language>('EN');
@@ -36,7 +35,7 @@ function AppContent() {
   const [showAlert, setShowAlert] = useState(true);
   const [isDark, setIsDark] = useState(true);
   const [timeLeft, setTimeLeft] = useState({ d: 2, h: 14, m: 45, s: 30 });
-  const [ipos, setIpos] = useState<IPO[]>([]);
+  const [ipos, setIpos] = useState<IPO[]>(DUMMY_IPOS);
   const t = TRANSLATIONS[lang];
   const navigate = useNavigate();
   const location = useLocation();
@@ -59,19 +58,6 @@ function AppContent() {
     }
   }, [isDark]);
 
-  // Real-time Firestore Sync
-  useEffect(() => {
-    const q = query(collection(db, 'ipos'), orderBy('openDate', 'desc'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const ipoList = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as IPO[];
-      setIpos(ipoList);
-    });
-    return () => unsubscribe();
-  }, []);
-
   // Countdown timer logic
   useEffect(() => {
     const timer = setInterval(() => {
@@ -88,10 +74,10 @@ function AppContent() {
 
   const renderPage = () => {
     switch (currentPage) {
-      case 'predictor': return <Predictor lang={lang} />;
+      case 'predictor': return <Predictor lang={lang} ipos={ipos} />;
       case 'education': return <EducationSection lang={lang} />;
       case 'about': return <AboutSection lang={lang} />;
-      case 'admin': return <AdminDashboard lang={lang} />;
+      case 'admin': return <AdminDashboard lang={lang} ipos={ipos} setIpos={setIpos} />;
       default: return renderHome();
     }
   };
