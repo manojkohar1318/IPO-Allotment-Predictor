@@ -18,7 +18,6 @@ import {
 } from 'lucide-react';
 import { TRANSLATIONS } from './constants';
 import { Navbar } from './components/Navbar';
-import { Ticker } from './components/Ticker';
 import { Predictor } from './components/Predictor';
 import { EducationSection } from './components/EducationSection';
 import { AboutSection } from './components/AboutSection';
@@ -30,10 +29,13 @@ import { DUMMY_IPOS } from './constants';
 function AppContent() {
   const [lang, setLang] = useState('EN');
   const [currentPage, setCurrentPage] = useState('home');
-  const [showAlert, setShowAlert] = useState(true);
   const [isDark, setIsDark] = useState(true);
-  const [timeLeft, setTimeLeft] = useState({ d: 2, h: 14, m: 45, s: 30 });
   const [ipos, setIpos] = useState(DUMMY_IPOS);
+  const [countdownData, setCountdownData] = useState({
+    company: 'Sarbottam Cement',
+    targetDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString()
+  });
+  const [timeLeft, setTimeLeft] = useState({ d: 0, h: 0, m: 0, s: 0 });
   const t = TRANSLATIONS[lang];
 
   // Check for hidden admin page via URL hash
@@ -59,24 +61,35 @@ function AppContent() {
 
   // Countdown timer logic
   useEffect(() => {
+    const calculateTimeLeft = () => {
+      const difference = +new Date(countdownData.targetDate) - +new Date();
+      let timeLeft = { d: 0, h: 0, m: 0, s: 0 };
+
+      if (difference > 0) {
+        timeLeft = {
+          d: Math.floor(difference / (1000 * 60 * 60 * 24)),
+          h: Math.floor((difference / (1000 * 60 * 60)) % 24),
+          m: Math.floor((difference / 1000 / 60) % 60),
+          s: Math.floor((difference / 1000) % 60)
+        };
+      }
+      return timeLeft;
+    };
+
     const timer = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev.s > 0) return { ...prev, s: prev.s - 1 };
-        if (prev.m > 0) return { ...prev, m: prev.m - 1, s: 59 };
-        if (prev.h > 0) return { ...prev, h: prev.h - 1, m: 59, s: 59 };
-        if (prev.d > 0) return { ...prev, d: prev.d - 1, h: 23, m: 59, s: 59 };
-        return prev;
-      });
+      setTimeLeft(calculateTimeLeft());
     }, 1000);
+    
+    setTimeLeft(calculateTimeLeft());
     return () => clearInterval(timer);
-  }, []);
+  }, [countdownData.targetDate]);
 
   const renderPage = () => {
     switch (currentPage) {
       case 'predictor': return <Predictor lang={lang} ipos={ipos} />;
       case 'education': return <EducationSection lang={lang} />;
       case 'about': return <AboutSection lang={lang} />;
-      case 'admin': return <AdminDashboard lang={lang} ipos={ipos} setIpos={setIpos} />;
+      case 'admin': return <AdminDashboard lang={lang} ipos={ipos} setIpos={setIpos} countdownData={countdownData} setCountdownData={setCountdownData} />;
       default: return renderHome();
     }
   };
@@ -202,43 +215,14 @@ function AppContent() {
         </div>
       </section>
 
-      {/* Testimonials */}
-      <section className="max-w-7xl mx-auto px-4">
-        <h2 className="text-4xl font-black mb-16 text-center">{t.testimonials}</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {[
-            { name: 'Ramesh Sharma', loc: 'Kathmandu', text: 'This tool predicted my chances perfectly for the last 3 IPOs. Highly recommended for every Nepali investor!', rating: 5 },
-            { name: 'Sita Gurung', loc: 'Pokhara', text: 'Mero share ma apply garnu bhanda agadi ma sadhai yo check garchhu. Very helpful and easy to use.', rating: 5 },
-            { name: 'Bikash Thapa', loc: 'Chitwan', text: 'The tips section is a goldmine. I started applying from multiple accounts and my allotment rate improved!', rating: 4 },
-          ].map((review, i) => (
-            <div key={i} className="glass p-8 rounded-3xl border border-white/10 relative">
-              <div className="flex gap-1 mb-6">
-                {[...Array(5)].map((_, j) => (
-                  <Star key={j} className={cn("w-4 h-4", j < review.rating ? "text-gold-400 fill-gold-400" : "text-slate-700")} />
-                ))}
-              </div>
-              <p className="text-slate-300 italic mb-8 leading-relaxed">"{review.text}"</p>
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-emerald-600 flex items-center justify-center font-bold text-xl">
-                  {review.name[0]}
-                </div>
-                <div>
-                  <h4 className="font-bold">{review.name}</h4>
-                  <p className="text-xs text-slate-500">{review.loc}</p>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
       {/* Countdown Widget */}
       <section className="max-w-4xl mx-auto px-4">
         <div className="bg-gradient-to-br from-emerald-600 to-emerald-800 p-10 rounded-[3rem] text-center shadow-2xl shadow-emerald-900/40 relative overflow-hidden">
           <div className="absolute top-0 right-0 p-8 opacity-10">
             <Clock className="w-32 h-32" />
           </div>
-          <h2 className="text-2xl font-bold mb-8">Next Major IPO Result Countdown</h2>
+          <h2 className="text-2xl font-bold mb-2">Next Major IPO Result Countdown</h2>
+          <p className="text-emerald-200 font-black text-3xl mb-8 uppercase tracking-wider">{countdownData.company}</p>
           <div className="flex justify-center gap-4 sm:gap-8">
             {[
               { label: 'Days', value: timeLeft.d },
@@ -262,26 +246,6 @@ function AppContent() {
 
   return (
     <div className="min-h-screen flex flex-col bg-navy-950 text-white transition-colors duration-300">
-      {/* Alert Banner */}
-      <AnimatePresence>
-        {showAlert && (
-          <motion.div 
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="bg-gold-500 text-navy-900 py-2 px-4 text-center text-sm font-bold relative z-[60]"
-          >
-            <div className="max-w-7xl mx-auto flex items-center justify-center gap-2">
-              <Bell className="w-4 h-4 animate-bounce" />
-              <span>New IPO Alert: Check the latest IPOs and Allotment Odds!</span>
-              <button onClick={() => setShowAlert(false)} className="absolute right-4 hover:scale-110 transition-transform">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       <Navbar 
         lang={lang} 
         setLang={setLang} 
@@ -292,8 +256,6 @@ function AppContent() {
       />
       
       <main className="flex-grow">
-        {currentPage === 'home' && <Ticker ipos={ipos} />}
-        
         <AnimatePresence mode="wait">
           <motion.div
             key={currentPage}

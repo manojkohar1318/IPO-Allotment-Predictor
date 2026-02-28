@@ -8,15 +8,21 @@ import {
   X, 
   Save, 
   AlertCircle,
-  Database
+  Database,
+  Clock
 } from 'lucide-react';
 import { SECTORS } from '../constants';
 
-export const AdminDashboard = ({ lang, ipos, setIpos }) => {
+export const AdminDashboard = ({ lang, ipos, setIpos, countdownData, setCountdownData }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingIpo, setEditingIpo] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [error, setError] = useState(null);
+
+  const [countdownForm, setCountdownForm] = useState({
+    company: countdownData.company,
+    targetDate: countdownData.targetDate.split('T')[0] + 'T' + countdownData.targetDate.split('T')[1].substring(0, 5)
+  });
 
   const [formData, setFormData] = useState({
     name: '',
@@ -29,6 +35,15 @@ export const AdminDashboard = ({ lang, ipos, setIpos }) => {
     openDate: '',
     closeDate: ''
   });
+
+  const handleUpdateCountdown = (e) => {
+    e.preventDefault();
+    setCountdownData({
+      company: countdownForm.company,
+      targetDate: new Date(countdownForm.targetDate).toISOString()
+    });
+    alert('Countdown updated successfully!');
+  };
 
   const handleOpenModal = (ipo) => {
     if (ipo) {
@@ -105,6 +120,37 @@ export const AdminDashboard = ({ lang, ipos, setIpos }) => {
           {error}
         </div>
       )}
+
+      {/* Countdown Management */}
+      <div className="glass rounded-[2.5rem] border border-white/10 p-8 mb-12">
+        <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
+          <Clock className="text-emerald-500" /> Manage Home Page Countdown
+        </h2>
+        <form onSubmit={handleUpdateCountdown} className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-slate-500 uppercase">Company Name</label>
+            <input 
+              type="text"
+              value={countdownForm.company}
+              onChange={(e) => setCountdownForm({...countdownForm, company: e.target.value})}
+              className="w-full bg-navy-900 border border-white/10 rounded-xl p-4 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+              placeholder="e.g. Sarbottam Cement"
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-slate-500 uppercase">Target Date & Time</label>
+            <input 
+              type="datetime-local"
+              value={countdownForm.targetDate}
+              onChange={(e) => setCountdownForm({...countdownForm, targetDate: e.target.value})}
+              className="w-full bg-navy-900 border border-white/10 rounded-xl p-4 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+            />
+          </div>
+          <button type="submit" className="btn-gold py-4 px-8 font-bold">
+            Update Countdown
+          </button>
+        </form>
+      </div>
 
       {/* Search & Stats */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
