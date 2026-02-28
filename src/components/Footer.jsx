@@ -32,14 +32,19 @@ export const Footer = ({ lang, setCurrentPage }) => {
               The results are approximate and for educational purposes only. Since the actual allotment process involves randomization, 
               real outcomes may differ. This is not financial advice.
             </p>
-            <div className="flex gap-4">
+            <div className="flex flex-col gap-4">
               <a 
                 href="https://www.facebook.com/share/1BuKk986R6/" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-all border border-white/10"
+                className="flex items-center gap-3 group"
               >
-                <Facebook className="w-5 h-5" />
+                <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all border border-white/10">
+                  <Facebook className="w-5 h-5" />
+                </div>
+                <span className="text-sm font-medium text-slate-400 group-hover:text-white transition-colors">
+                  Follow and Support on FB
+                </span>
               </a>
             </div>
           </div>

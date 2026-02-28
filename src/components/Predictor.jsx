@@ -107,22 +107,44 @@ export const Predictor = ({ lang, ipos }) => {
   };
 
   const handleShare = async () => {
-    const shareText = `My IPO Allotment Probability for ${result.companyName} is ${result.probability}%! ${result.comment} Check yours at IPO Predictor Nepal.`;
+    if (!resultRef.current) return;
     
-    if (navigator.share) {
-      try {
+    try {
+      const canvas = await html2canvas(resultRef.current, {
+        backgroundColor: '#020617',
+        scale: 2,
+        logging: false,
+        useCORS: true,
+        onclone: (clonedDoc) => {
+          const buttons = clonedDoc.querySelector('.no-download');
+          if (buttons) buttons.style.display = 'none';
+        }
+      });
+      
+      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+      const file = new File([blob], `IPO_Prediction_${result.companyName.replace(/\s+/g, '_')}.png`, { type: 'image/png' });
+      
+      const shareText = `My Allotment prediction of ${result.companyName}`;
+      
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: 'IPO Allotment Prediction',
+          text: shareText,
+        });
+      } else if (navigator.share) {
         await navigator.share({
           title: 'IPO Allotment Prediction',
           text: shareText,
           url: window.location.href,
         });
-      } catch (err) {
-        console.error('Error sharing:', err);
+      } else {
+        // Fallback to Facebook share
+        const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}&quote=${encodeURIComponent(shareText)}`;
+        window.open(fbUrl, '_blank');
       }
-    } else {
-      // Fallback to Facebook share
-      const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}&quote=${encodeURIComponent(shareText)}`;
-      window.open(fbUrl, '_blank');
+    } catch (err) {
+      console.error('Error sharing:', err);
     }
   };
 
@@ -319,6 +341,9 @@ export const Predictor = ({ lang, ipos }) => {
                   <h2 className="text-2xl md:text-3xl font-bold text-slate-400">
                     {lang === 'EN' ? 'Your Allotment Probability' : 'तपाईको बाँडफाँडको सम्भावना'}
                   </h2>
+                  <div className={cn("text-4xl md:text-6xl font-black mb-6", result?.color)}>
+                    {result?.companyName}
+                  </div>
                   <div className={cn("text-8xl md:text-9xl font-black tracking-tighter", result?.color)}>
                     {result?.probability}%
                   </div>

@@ -89,6 +89,11 @@ function AppContent() {
     return () => clearInterval(timer);
   }, [countdownData.targetDate]);
 
+  // Scroll to top on page change
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [currentPage]);
+
   const renderPage = () => {
     switch (currentPage) {
       case 'predictor': return <Predictor lang={lang} ipos={ipos} />;
@@ -263,7 +268,7 @@ function AppContent() {
         setIsDark={setIsDark}
       />
       
-      <main className="flex-grow">
+      <main className="flex-grow pt-20">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentPage}

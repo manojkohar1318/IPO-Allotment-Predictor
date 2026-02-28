@@ -63,9 +63,6 @@ export const EducationSection = ({ lang }) => {
 
       {/* Facebook Section */}
       <div className="glass p-12 rounded-[3rem] border border-white/10 relative overflow-hidden">
-        <div className="absolute top-0 right-0 p-12 opacity-5">
-          <Facebook className="w-64 h-64" />
-        </div>
         <div className="relative z-10 flex flex-col md:flex-row items-center gap-12">
           <div className="flex-grow space-y-6">
             <h2 className="text-3xl font-black">Get Latest Updates on FB</h2>
@@ -78,21 +75,16 @@ export const EducationSection = ({ lang }) => {
               rel="noopener noreferrer"
               className="btn-gold px-8 py-4 inline-flex items-center gap-3"
             >
-              <Facebook className="w-5 h-5" /> Visit Facebook Page
+              Visit Facebook Page
             </a>
           </div>
-          <div className="w-full md:w-96 aspect-video bg-navy-900 rounded-2xl border border-white/10 flex items-center justify-center group cursor-pointer overflow-hidden">
+          <div className="w-full md:w-96 aspect-square bg-navy-900 rounded-3xl border border-white/10 flex items-center justify-center group cursor-pointer overflow-hidden shadow-2xl">
             <img 
-              src="https://picsum.photos/seed/finance/800/450" 
-              alt="Facebook Community" 
-              className="w-full h-full object-cover opacity-50 group-hover:scale-110 transition-transform duration-500"
+              src="https://picsum.photos/seed/nepal-finance/800/800" 
+              alt="IPO/FPO Updates Nepal" 
+              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
               referrerPolicy="no-referrer"
             />
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center shadow-xl">
-                <Facebook className="text-white w-8 h-8" />
-              </div>
-            </div>
           </div>
         </div>
       </div>
