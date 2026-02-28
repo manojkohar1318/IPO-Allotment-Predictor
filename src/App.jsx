@@ -23,6 +23,9 @@ import { EducationSection } from './components/EducationSection';
 import { AboutSection } from './components/AboutSection';
 import { AdminDashboard } from './components/AdminDashboard';
 import { Footer } from './components/Footer';
+import { PrivacyPolicy } from './components/PrivacyPolicy';
+import { TermsOfService } from './components/TermsOfService';
+import { DisclaimerPage } from './components/DisclaimerPage';
 import { cn } from './types';
 import { DUMMY_IPOS } from './constants';
 
@@ -54,8 +57,10 @@ function AppContent() {
   useEffect(() => {
     if (isDark) {
       document.documentElement.classList.add('dark');
+      document.body.className = 'bg-navy-950 text-white';
     } else {
       document.documentElement.classList.remove('dark');
+      document.body.className = 'bg-slate-50 text-slate-900';
     }
   }, [isDark]);
 
@@ -90,6 +95,9 @@ function AppContent() {
       case 'education': return <EducationSection lang={lang} />;
       case 'about': return <AboutSection lang={lang} />;
       case 'admin': return <AdminDashboard lang={lang} ipos={ipos} setIpos={setIpos} countdownData={countdownData} setCountdownData={setCountdownData} />;
+      case 'privacy': return <PrivacyPolicy lang={lang} />;
+      case 'terms': return <TermsOfService lang={lang} />;
+      case 'disclaimer': return <DisclaimerPage lang={lang} />;
       default: return renderHome();
     }
   };
@@ -150,7 +158,7 @@ function AppContent() {
                 <h3 className="text-2xl font-black text-gold-500 uppercase tracking-widest">Disclaimer</h3>
               </div>
               <p className="text-slate-300 text-lg leading-relaxed text-center italic">
-                "The predictions provided by this application are based on historical data and statistical models. They are for educational purposes only and do not guarantee actual IPO allotment results. Investing in the stock market involves risk. Please consult with a financial advisor before making investment decisions."
+                "{t.disclaimer}"
               </p>
             </motion.div>
           </div>
@@ -274,7 +282,7 @@ function AppContent() {
       {/* Floating Buttons */}
       <div className="fixed bottom-8 right-8 flex flex-col gap-4 z-40">
         <a 
-          href="https://wa.me/9779800000000" 
+          href="https://wa.me/917080460057" 
           target="_blank" 
           rel="noopener noreferrer"
           className="w-14 h-14 bg-[#25D366] rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform"

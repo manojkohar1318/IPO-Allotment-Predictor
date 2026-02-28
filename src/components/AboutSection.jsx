@@ -5,8 +5,7 @@ import {
   Target, 
   ShieldCheck, 
   Mail, 
-  MapPin, 
-  Phone,
+  MessageCircle,
   TrendingUp,
   Globe
 } from 'lucide-react';
@@ -77,16 +76,16 @@ export const AboutSection = ({ lang }) => {
               </div>
               <div>
                 <p className="text-xs font-bold text-slate-500 uppercase">Email Support</p>
-                <p className="text-lg font-bold">support@ipopredictor.com.np</p>
+                <p className="text-lg font-bold">earnrealcashnepal@gmail.com</p>
               </div>
             </div>
             <div className="flex items-center gap-6 p-6 glass rounded-2xl border border-white/10">
-              <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center">
-                <MapPin className="text-blue-500 w-6 h-6" />
+              <div className="w-12 h-12 bg-[#25D366]/20 rounded-xl flex items-center justify-center">
+                <MessageCircle className="text-[#25D366] w-6 h-6" />
               </div>
               <div>
-                <p className="text-xs font-bold text-slate-500 uppercase">Our Office</p>
-                <p className="text-lg font-bold">New Baneshwor, Kathmandu, Nepal</p>
+                <p className="text-xs font-bold text-slate-500 uppercase">WhatsApp Us</p>
+                <p className="text-lg font-bold">+91 7080460057</p>
               </div>
             </div>
           </div>

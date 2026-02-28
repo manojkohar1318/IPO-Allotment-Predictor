@@ -33,11 +33,14 @@ export const Footer = ({ lang, setCurrentPage }) => {
               real outcomes may differ. This is not financial advice.
             </p>
             <div className="flex gap-4">
-              {[Facebook, Twitter, Youtube].map((Icon, i) => (
-                <a key={i} href="#" className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-emerald-600 hover:text-white transition-all border border-white/10">
-                  <Icon className="w-5 h-5" />
-                </a>
-              ))}
+              <a 
+                href="https://www.facebook.com/share/1BuKk986R6/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-all border border-white/10"
+              >
+                <Facebook className="w-5 h-5" />
+              </a>
             </div>
           </div>
 
@@ -86,9 +89,9 @@ export const Footer = ({ lang, setCurrentPage }) => {
             © 2026 IPO Predictor Nepal. All rights reserved.
           </p>
           <div className="flex gap-6 text-xs text-slate-500">
-            <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
-            <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
-            <a href="#" className="hover:text-white transition-colors">Disclaimer</a>
+            <button onClick={() => setCurrentPage('privacy')} className="hover:text-white transition-colors">{t.privacyPolicy}</button>
+            <button onClick={() => setCurrentPage('terms')} className="hover:text-white transition-colors">{t.termsOfService}</button>
+            <button onClick={() => setCurrentPage('disclaimer')} className="hover:text-white transition-colors">{t.disclaimerPage}</button>
           </div>
         </div>
       </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   TrendingUp, 
@@ -11,15 +11,18 @@ import {
   Calculator,
   Share2,
   Download,
-  Loader2
+  Loader2,
+  Facebook
 } from 'lucide-react';
 import { TRANSLATIONS } from '../constants';
 import { cn } from '../types';
 import ReactConfetti from 'react-confetti';
+import html2canvas from 'html2canvas';
 
 export const Predictor = ({ lang, ipos }) => {
   const [step, setStep] = useState('form');
   const [loading, setLoading] = useState(false);
+  const resultRef = useRef(null);
   
   // Form State
   const [selectedIpoId, setSelectedIpoId] = useState('');
@@ -30,6 +33,8 @@ export const Predictor = ({ lang, ipos }) => {
   
   const [result, setResult] = useState(null);
   const t = TRANSLATIONS[lang];
+
+  const selectedIpo = ipos.find(ipo => ipo.id === selectedIpoId);
 
   // Load saved data
   useEffect(() => {
@@ -63,25 +68,32 @@ export const Predictor = ({ lang, ipos }) => {
       
       let verdict = '';
       let color = '';
+      let comment = '';
       
       if (totalProb > 80) {
         verdict = lang === 'EN' ? 'Extremely High Chance' : 'अत्यधिक उच्च सम्भावना';
         color = 'text-emerald-400';
+        comment = t.funnyCommentHigh;
       } else if (totalProb > 50) {
         verdict = lang === 'EN' ? 'Good Chance' : 'राम्रो सम्भावना';
         color = 'text-emerald-500';
+        comment = t.funnyCommentGood;
       } else if (totalProb > 20) {
         verdict = lang === 'EN' ? 'Moderate Chance' : 'मध्यम सम्भावना';
         color = 'text-gold-400';
+        comment = t.funnyCommentMod;
       } else {
         verdict = lang === 'EN' ? 'Low Chance' : 'न्यून सम्भावना';
         color = 'text-red-400';
+        comment = t.funnyCommentLow;
       }
 
       setResult({
         probability: Math.round(totalProb * 100) / 100,
         verdict,
         color,
+        comment,
+        companyName: lang === 'EN' ? selectedIpo.name : selectedIpo.nameNP,
         breakdown: [
           { label: lang === 'EN' ? 'Per Account Odds' : 'प्रति खाता सम्भावना', value: `${(pPerAccount * 100).toFixed(2)}%` },
           { label: lang === 'EN' ? 'Total Accounts' : 'कुल खाता संख्या', value: accounts },
@@ -92,6 +104,51 @@ export const Predictor = ({ lang, ipos }) => {
       setLoading(false);
       setStep('result');
     }, 1500);
+  };
+
+  const handleShare = async () => {
+    const shareText = `My IPO Allotment Probability for ${result.companyName} is ${result.probability}%! ${result.comment} Check yours at IPO Predictor Nepal.`;
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'IPO Allotment Prediction',
+          text: shareText,
+          url: window.location.href,
+        });
+      } catch (err) {
+        console.error('Error sharing:', err);
+      }
+    } else {
+      // Fallback to Facebook share
+      const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}&quote=${encodeURIComponent(shareText)}`;
+      window.open(fbUrl, '_blank');
+    }
+  };
+
+  const handleDownload = async () => {
+    if (!resultRef.current) return;
+    
+    try {
+      const canvas = await html2canvas(resultRef.current, {
+        backgroundColor: '#020617', // navy-950
+        scale: 2,
+        logging: false,
+        useCORS: true,
+        onclone: (clonedDoc) => {
+          const buttons = clonedDoc.querySelector('.no-download');
+          if (buttons) buttons.style.display = 'none';
+        }
+      });
+      
+      const image = canvas.toDataURL('image/png');
+      const link = document.createElement('a');
+      link.href = image;
+      link.download = `IPO_Prediction_${result.companyName.replace(/\s+/g, '_')}.png`;
+      link.click();
+    } catch (err) {
+      console.error('Error downloading card:', err);
+    }
   };
 
   return (
@@ -243,10 +300,10 @@ export const Predictor = ({ lang, ipos }) => {
               onClick={() => setStep('form')}
               className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors font-bold"
             >
-              <ArrowLeft className="w-5 h-5" /> {lang === 'EN' ? 'Back to Form' : 'फारममा फर्कनुहोस्'}
+              <ArrowLeft className="w-5 h-5" /> {t.backToForm}
             </button>
 
-            <div className="glass p-10 md:p-16 rounded-[4rem] border border-white/10 text-center relative overflow-hidden">
+            <div ref={resultRef} className="glass p-10 md:p-16 rounded-[4rem] border border-white/10 text-center relative overflow-hidden">
               {/* Result Background Glow */}
               <div className={cn(
                 "absolute inset-0 opacity-10 blur-[100px] -z-10",
@@ -255,7 +312,7 @@ export const Predictor = ({ lang, ipos }) => {
 
               <div className="space-y-10">
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-xs font-bold uppercase tracking-widest text-slate-400">
-                  <Calculator className="w-3.5 h-3.5" /> Prediction Result
+                  <Calculator className="w-3.5 h-3.5" /> {t.resultFor} {result?.companyName}
                 </div>
 
                 <div className="space-y-4">
@@ -268,6 +325,12 @@ export const Predictor = ({ lang, ipos }) => {
                   <div className={cn("text-2xl md:text-3xl font-black uppercase tracking-widest flex items-center justify-center gap-3", result?.color)}>
                     <CheckCircle2 className="w-8 h-8" /> {result?.verdict}
                   </div>
+                  <p className="text-xl md:text-2xl font-bold text-slate-300 italic">
+                    "{result?.comment}"
+                  </p>
+                  <p className="text-gold-400 font-black text-lg uppercase tracking-widest">
+                    {t.wish}
+                  </p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -279,12 +342,18 @@ export const Predictor = ({ lang, ipos }) => {
                   ))}
                 </div>
 
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-6">
-                  <button className="btn-gold w-full sm:w-auto px-10 py-5 flex items-center justify-center gap-3">
-                    <Share2 className="w-5 h-5" /> Share Result
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-6 no-download">
+                  <button 
+                    onClick={handleShare}
+                    className="btn-gold w-full sm:w-auto px-10 py-5 flex items-center justify-center gap-3"
+                  >
+                    <Share2 className="w-5 h-5" /> {t.shareResult}
                   </button>
-                  <button className="w-full sm:w-auto px-10 py-5 rounded-2xl font-bold bg-white/5 border border-white/10 hover:bg-white/10 transition-all flex items-center justify-center gap-3">
-                    <Download className="w-5 h-5" /> Download Card
+                  <button 
+                    onClick={handleDownload}
+                    className="w-full sm:w-auto px-10 py-5 rounded-2xl font-bold bg-white/5 border border-white/10 hover:bg-white/10 transition-all flex items-center justify-center gap-3"
+                  >
+                    <Download className="w-5 h-5" /> {t.downloadCard}
                   </button>
                 </div>
               </div>
@@ -297,7 +366,7 @@ export const Predictor = ({ lang, ipos }) => {
               <div>
                 <h3 className="text-xl font-bold mb-2 text-gold-400">Important Note</h3>
                 <p className="text-slate-400 leading-relaxed">
-                  This prediction is based on the current oversubscription rate. The final allotment is done via a random lottery system by the CDSC. Good luck with your application!
+                  {t.disclaimer}
                 </p>
               </div>
             </div>

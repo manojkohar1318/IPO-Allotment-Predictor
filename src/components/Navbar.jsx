@@ -9,7 +9,8 @@ import {
   X, 
   Globe, 
   Moon, 
-  Sun
+  Sun,
+  Facebook
 } from 'lucide-react';
 import { TRANSLATIONS } from '../constants';
 import { cn } from '../types';
@@ -142,9 +143,14 @@ export const Navbar = ({ lang, setLang, currentPage, setCurrentPage, isDark, set
             <div className="mt-auto p-6 bg-white/5 rounded-2xl border border-white/10">
               <p className="text-sm text-slate-400 mb-4">{t.disclaimer}</p>
               <div className="flex gap-4">
-                <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center">f</div>
-                <div className="w-10 h-10 rounded-full bg-sky-500 flex items-center justify-center">t</div>
-                <div className="w-10 h-10 rounded-full bg-red-600 flex items-center justify-center">y</div>
+                <a 
+                  href="https://www.facebook.com/share/1BuKk986R6/" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white"
+                >
+                  <Facebook className="w-5 h-5" />
+                </a>
               </div>
             </div>
           </motion.div>
