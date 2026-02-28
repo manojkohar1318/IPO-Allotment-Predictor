@@ -1,14 +1,22 @@
 import React from 'react';
 import { TRANSLATIONS } from '../constants';
 
-export const DisclaimerPage = ({ lang }) => {
+import { cn } from '../types';
+
+export const DisclaimerPage = ({ lang, isDark }) => {
   const t = TRANSLATIONS[lang];
   return (
     <div className="max-w-4xl mx-auto px-4 py-20 space-y-8">
-      <h1 className="text-4xl font-black">{t.disclaimerPage}</h1>
-      <div className="prose prose-invert max-w-none text-slate-400 space-y-6">
-        <div className="p-8 bg-gold-500/10 border border-gold-500/20 rounded-3xl">
-          <p className="text-gold-400 font-bold text-lg leading-relaxed italic">
+      <h1 className={cn("text-4xl font-black", isDark ? "text-white" : "text-slate-900")}>{t.disclaimerPage}</h1>
+      <div className={cn(
+        "max-w-none space-y-6",
+        isDark ? "text-slate-400" : "text-slate-600"
+      )}>
+        <div className={cn(
+          "p-8 border rounded-3xl",
+          isDark ? "bg-gold-500/10 border-gold-500/20" : "bg-gold-50 border-gold-200"
+        )}>
+          <p className="text-gold-500 font-bold text-lg leading-relaxed italic text-center">
             "{t.disclaimer}"
           </p>
         </div>

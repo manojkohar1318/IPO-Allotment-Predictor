@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Home,
   TrendingUp, 
   CheckCircle2, 
   ArrowRight,
@@ -14,7 +13,8 @@ import {
   Facebook,
   Twitter,
   Instagram,
-  Mail
+  Mail,
+  Sparkles
 } from 'lucide-react';
 import { TRANSLATIONS } from './constants';
 import { Navbar } from './components/Navbar';
@@ -96,13 +96,13 @@ function AppContent() {
 
   const renderPage = () => {
     switch (currentPage) {
-      case 'predictor': return <Predictor lang={lang} ipos={ipos} />;
-      case 'education': return <EducationSection lang={lang} />;
-      case 'about': return <AboutSection lang={lang} />;
-      case 'admin': return <AdminDashboard lang={lang} ipos={ipos} setIpos={setIpos} countdownData={countdownData} setCountdownData={setCountdownData} />;
-      case 'privacy': return <PrivacyPolicy lang={lang} />;
-      case 'terms': return <TermsOfService lang={lang} />;
-      case 'disclaimer': return <DisclaimerPage lang={lang} />;
+      case 'predictor': return <Predictor lang={lang} ipos={ipos} isDark={isDark} />;
+      case 'education': return <EducationSection lang={lang} isDark={isDark} />;
+      case 'about': return <AboutSection lang={lang} isDark={isDark} />;
+      case 'admin': return <AdminDashboard lang={lang} ipos={ipos} setIpos={setIpos} countdownData={countdownData} setCountdownData={setCountdownData} isDark={isDark} />;
+      case 'privacy': return <PrivacyPolicy lang={lang} isDark={isDark} />;
+      case 'terms': return <TermsOfService lang={lang} isDark={isDark} />;
+      case 'disclaimer': return <DisclaimerPage lang={lang} isDark={isDark} />;
       default: return renderHome();
     }
   };
@@ -123,10 +123,16 @@ function AppContent() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <h1 className="text-5xl md:text-7xl font-black mb-6 leading-tight">
+            <h1 className={cn(
+              "text-5xl md:text-7xl font-black mb-6 leading-tight",
+              isDark ? "text-white" : "text-slate-900"
+            )}>
               {t.heroTitle}
             </h1>
-            <p className="text-xl md:text-2xl text-slate-400 mb-10 max-w-3xl mx-auto">
+            <p className={cn(
+              "text-xl md:text-2xl mb-10 max-w-3xl mx-auto",
+              isDark ? "text-slate-400" : "text-slate-600"
+            )}>
               {t.heroSub}
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -134,11 +140,14 @@ function AppContent() {
                 onClick={() => setCurrentPage('predictor')}
                 className="btn-gold text-lg px-10 py-5 flex items-center gap-3 group"
               >
-                {t.checkChances} <Home className="w-6 h-6 group-hover:scale-110 transition-transform" />
+                {t.checkChances} <Sparkles className="w-6 h-6 group-hover:scale-110 transition-transform" />
               </button>
               <button 
                 onClick={() => setCurrentPage('education')}
-                className="px-10 py-5 rounded-xl font-bold bg-white/5 border border-white/10 hover:bg-white/10 transition-all"
+                className={cn(
+                  "px-10 py-5 rounded-xl font-bold border transition-all",
+                  isDark ? "bg-white/5 border-white/10 hover:bg-white/10 text-white" : "bg-slate-100 border-slate-200 hover:bg-slate-200 text-slate-900"
+                )}
               >
                 Learn How It Works
               </button>
@@ -162,7 +171,10 @@ function AppContent() {
                 </div>
                 <h3 className="text-2xl font-black text-gold-500 uppercase tracking-widest">Disclaimer</h3>
               </div>
-              <p className="text-slate-300 text-lg leading-relaxed text-center italic">
+              <p className={cn(
+                "text-lg leading-relaxed text-center italic",
+                isDark ? "text-slate-300" : "text-slate-600"
+              )}>
                 "{t.disclaimer}"
               </p>
             </motion.div>
@@ -173,12 +185,15 @@ function AppContent() {
       {/* How It Works */}
       <section className="max-w-7xl mx-auto px-4">
         <div className="text-center mb-16">
-          <h2 className="text-4xl font-black mb-4">{t.howItWorks}</h2>
-          <p className="text-slate-400">Simple 3-step process to find your allotment odds.</p>
+          <h2 className={cn("text-4xl font-black mb-4", isDark ? "text-white" : "text-slate-900")}>{t.howItWorks}</h2>
+          <p className={isDark ? "text-slate-400" : "text-slate-500"}>Simple 3-step process to find your allotment odds.</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12 relative">
           {/* Connector Line */}
-          <div className="hidden md:block absolute top-1/2 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-y-1/2 -z-10" />
+          <div className={cn(
+            "hidden md:block absolute top-1/2 left-0 w-full h-0.5 -translate-y-1/2 -z-10",
+            isDark ? "bg-gradient-to-r from-transparent via-white/10 to-transparent" : "bg-gradient-to-r from-transparent via-slate-200 to-transparent"
+          )} />
           
           {[
             { step: 1, title: t.step1, desc: 'Select your IPO and enter application details like number of accounts.', icon: '📝' },
@@ -186,11 +201,14 @@ function AppContent() {
             { step: 3, title: t.step3, desc: 'Get a detailed probability score and tips to improve your future chances.', icon: '📊' },
           ].map((item, i) => (
             <div key={i} className="text-center space-y-6">
-              <div className="w-20 h-20 bg-navy-800 rounded-3xl border border-white/10 flex items-center justify-center text-4xl mx-auto shadow-2xl">
+              <div className={cn(
+                "w-20 h-20 rounded-3xl border flex items-center justify-center text-4xl mx-auto shadow-2xl",
+                isDark ? "bg-navy-800 border-white/10" : "bg-white border-slate-200"
+              )}>
                 {item.icon}
               </div>
-              <h3 className="text-xl font-bold">{item.title}</h3>
-              <p className="text-slate-400 leading-relaxed">{item.desc}</p>
+              <h3 className={cn("text-xl font-bold", isDark ? "text-white" : "text-slate-900")}>{item.title}</h3>
+              <p className={cn("leading-relaxed", isDark ? "text-slate-400" : "text-slate-500")}>{item.desc}</p>
             </div>
           ))}
         </div>
@@ -198,28 +216,37 @@ function AppContent() {
 
       {/* Recent Results */}
       <section className="max-w-7xl mx-auto px-4">
-        <div className="glass p-10 rounded-[3rem] border border-white/10">
+        <div className={cn(
+          "glass p-10 rounded-[3rem] border",
+          isDark ? "border-white/10" : "border-slate-200 bg-white/50"
+        )}>
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
-            <h2 className="text-3xl font-black">{t.recentResults}</h2>
+            <h2 className={cn("text-3xl font-black", isDark ? "text-white" : "text-slate-900")}>{t.recentResults}</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {ipos.slice(0, 6).map((ipo) => (
-              <div key={ipo.id} className="bg-white/5 p-6 rounded-2xl border border-white/10 hover:border-white/30 transition-all">
+              <div key={ipo.id} className={cn(
+                "p-6 rounded-2xl border transition-all",
+                isDark ? "bg-white/5 border-white/10 hover:border-white/30" : "bg-white border-slate-200 hover:border-slate-300 shadow-sm"
+              )}>
                 <div className="flex justify-between items-start mb-4">
-                  <span className="text-xs font-bold px-2 py-1 rounded bg-navy-900 text-gold-400 border border-gold-500/30">
+                  <span className={cn(
+                    "text-xs font-bold px-2 py-1 rounded border",
+                    isDark ? "bg-navy-900 text-gold-400 border-gold-500/30" : "bg-slate-50 text-gold-600 border-gold-500/30"
+                  )}>
                     {ipo.type}
                   </span>
-                  <span className="text-xs text-slate-500">{ipo.sector}</span>
+                  <span className={isDark ? "text-slate-500" : "text-slate-400"}>{ipo.sector}</span>
                 </div>
-                <h3 className="font-bold text-lg mb-4">{lang === 'EN' ? ipo.name : ipo.nameNP}</h3>
-                <div className="flex justify-between items-center pt-4 border-t border-white/5">
+                <h3 className={cn("font-bold text-lg mb-4", isDark ? "text-white" : "text-slate-900")}>{lang === 'EN' ? ipo.name : ipo.nameNP}</h3>
+                <div className={cn("flex justify-between items-center pt-4 border-t", isDark ? "border-white/5" : "border-slate-100")}>
                   <div>
                     <p className="text-[10px] text-slate-500 uppercase font-bold">Category</p>
-                    <p className="font-bold text-xs">{ipo.category}</p>
+                    <p className={cn("font-bold text-xs", isDark ? "text-white" : "text-slate-700")}>{ipo.category}</p>
                   </div>
                   <div className="text-right">
                     <p className="text-[10px] text-slate-500 uppercase font-bold">Price</p>
-                    <p className="font-bold text-emerald-400">NPR {ipo.price}</p>
+                    <p className="font-bold text-emerald-500">NPR {ipo.price}</p>
                   </div>
                 </div>
               </div>
@@ -258,7 +285,10 @@ function AppContent() {
   );
 
   return (
-    <div className="min-h-screen flex flex-col bg-navy-950 text-white transition-colors duration-300">
+    <div className={cn(
+      "min-h-screen flex flex-col transition-colors duration-300",
+      isDark ? "bg-navy-950 text-white" : "bg-slate-50 text-slate-900"
+    )}>
       <Navbar 
         lang={lang} 
         setLang={setLang} 
@@ -282,7 +312,7 @@ function AppContent() {
         </AnimatePresence>
       </main>
 
-      <Footer lang={lang} setCurrentPage={setCurrentPage} />
+      <Footer lang={lang} setCurrentPage={setCurrentPage} isDark={isDark} />
 
       {/* Floating Buttons */}
       <div className="fixed bottom-8 right-8 flex flex-col gap-4 z-40">

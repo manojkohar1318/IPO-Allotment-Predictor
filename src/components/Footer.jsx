@@ -9,12 +9,16 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { TRANSLATIONS } from '../constants';
+import { cn } from '../types';
 
-export const Footer = ({ lang, setCurrentPage }) => {
+export const Footer = ({ lang, setCurrentPage, isDark }) => {
   const t = TRANSLATIONS[lang];
 
   return (
-    <footer className="bg-navy-800/50 border-t border-white/10 pt-20 pb-10 px-4">
+    <footer className={cn(
+      "pt-20 pb-10 px-4 border-t transition-colors duration-300",
+      isDark ? "bg-navy-800/50 border-white/10" : "bg-slate-100 border-slate-200"
+    )}>
       <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 mb-16">
           {/* Brand */}
@@ -23,11 +27,17 @@ export const Footer = ({ lang, setCurrentPage }) => {
               <div className="w-10 h-10 bg-emerald-600 rounded-lg flex items-center justify-center">
                 <TrendingUp className="text-white w-6 h-6" />
               </div>
-              <span className="text-xl font-bold tracking-tight">
+              <span className={cn(
+                "text-xl font-bold tracking-tight",
+                isDark ? "text-white" : "text-slate-900"
+              )}>
                 IPO <span className="text-emerald-500">Predictor</span>
               </span>
             </div>
-            <p className="text-slate-400 leading-relaxed">
+            <p className={cn(
+              "leading-relaxed",
+              isDark ? "text-slate-400" : "text-slate-600"
+            )}>
               This website provides a fun and simple estimate of IPO allotment probability based on subscription data. 
               The results are approximate and for educational purposes only. Since the actual allotment process involves randomization, 
               real outcomes may differ. This is not financial advice.
@@ -42,7 +52,10 @@ export const Footer = ({ lang, setCurrentPage }) => {
                 <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all border border-white/10">
                   <Facebook className="w-5 h-5" />
                 </div>
-                <span className="text-sm font-medium text-slate-400 group-hover:text-white transition-colors">
+                <span className={cn(
+                  "text-sm font-medium transition-colors",
+                  isDark ? "text-slate-300 group-hover:text-white" : "text-slate-500 group-hover:text-slate-900"
+                )}>
                   Follow and Support on FB
                 </span>
               </a>
@@ -51,13 +64,16 @@ export const Footer = ({ lang, setCurrentPage }) => {
 
           {/* Quick Links */}
           <div>
-            <h4 className="text-lg font-bold mb-6">Quick Links</h4>
+            <h4 className={cn("text-lg font-bold mb-6", isDark ? "text-white" : "text-slate-900")}>Quick Links</h4>
             <ul className="space-y-4">
               {['home', 'predictor', 'education', 'about'].map((id) => (
                 <li key={id}>
                   <button 
                     onClick={() => setCurrentPage(id)}
-                    className="text-slate-400 hover:text-emerald-400 transition-colors capitalize"
+                    className={cn(
+                      "transition-colors capitalize",
+                      isDark ? "text-slate-400 hover:text-emerald-400" : "text-slate-600 hover:text-emerald-600"
+                    )}
                   >
                     {t[id]}
                   </button>
@@ -68,9 +84,9 @@ export const Footer = ({ lang, setCurrentPage }) => {
 
           {/* Contact */}
           <div>
-            <h4 className="text-lg font-bold mb-6">Contact Us</h4>
+            <h4 className={cn("text-lg font-bold mb-6", isDark ? "text-white" : "text-slate-900")}>Contact Us</h4>
             <ul className="space-y-6">
-              <li className="flex items-center gap-3 text-slate-400">
+              <li className={cn("flex items-center gap-3", isDark ? "text-slate-400" : "text-slate-600")}>
                 <Mail className="w-5 h-5 text-emerald-500 shrink-0" />
                 <span>earnrealcashnepal@gmail.com</span>
               </li>
@@ -89,14 +105,14 @@ export const Footer = ({ lang, setCurrentPage }) => {
           </div>
         </div>
 
-        <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
+        <div className={cn("pt-8 border-t flex flex-col md:flex-row justify-between items-center gap-6", isDark ? "border-white/5" : "border-slate-200")}>
           <p className="text-sm text-slate-500">
             © 2026 IPO Predictor Nepal. All rights reserved.
           </p>
           <div className="flex gap-6 text-xs text-slate-500">
-            <button onClick={() => setCurrentPage('privacy')} className="hover:text-white transition-colors">{t.privacyPolicy}</button>
-            <button onClick={() => setCurrentPage('terms')} className="hover:text-white transition-colors">{t.termsOfService}</button>
-            <button onClick={() => setCurrentPage('disclaimer')} className="hover:text-white transition-colors">{t.disclaimerPage}</button>
+            <button onClick={() => setCurrentPage('privacy')} className={cn("transition-colors", isDark ? "hover:text-white" : "hover:text-slate-900")}>{t.privacyPolicy}</button>
+            <button onClick={() => setCurrentPage('terms')} className={cn("transition-colors", isDark ? "hover:text-white" : "hover:text-slate-900")}>{t.termsOfService}</button>
+            <button onClick={() => setCurrentPage('disclaimer')} className={cn("transition-colors", isDark ? "hover:text-white" : "hover:text-slate-900")}>{t.disclaimerPage}</button>
           </div>
         </div>
       </div>
