@@ -109,41 +109,53 @@ export const Predictor = ({ lang, ipos, isDark }) => {
     if (!resultRef.current) return;
     
     try {
+      const scale = Math.max(window.devicePixelRatio || 1, 3);
       const canvas = await html2canvas(resultRef.current, {
-        backgroundColor: '#020617',
-        scale: 2,
+        backgroundColor: isDark ? '#020617' : '#ffffff',
+        scale: scale,
         logging: false,
         useCORS: true,
+        allowTaint: false,
         onclone: (clonedDoc) => {
           const buttons = clonedDoc.querySelector('.no-download');
           if (buttons) buttons.style.display = 'none';
+          
+          const card = clonedDoc.getElementById('resultCard');
+          if (card) {
+            card.style.borderRadius = '2rem';
+            card.style.boxShadow = 'none';
+          }
         }
       });
       
-      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
-      const file = new File([blob], `IPO_Prediction_${result.companyName.replace(/\s+/g, '_')}.png`, { type: 'image/png' });
-      
-      const shareText = `My Allotment prediction of ${result.companyName}`;
-      
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({
-          files: [file],
-          title: 'IPO Allotment Prediction',
-          text: shareText,
-        });
-      } else if (navigator.share) {
-        await navigator.share({
-          title: 'IPO Allotment Prediction',
-          text: shareText,
-          url: window.location.href,
-        });
+      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png', 1.0));
+      if (!blob) throw new Error('Failed to create blob');
+
+      const fileName = `IPO_Prediction_${result.companyName.replace(/\s+/g, '_')}.png`;
+      const file = new File([blob], fileName, { type: 'image/png' });
+      const shareData = {
+        title: 'NEPSE IPO Allotment Prediction',
+        text: lang === 'EN' ? 'Check out my IPO allotment probability result!' : 'मेरो IPO बाँडफाँड सम्भावनाको नतिजा हेर्नुहोस्!',
+        files: [file]
+      };
+
+      if (navigator.canShare && navigator.canShare(shareData)) {
+        await navigator.share(shareData);
       } else {
-        // Fallback to Facebook share
-        const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}&quote=${encodeURIComponent(shareText)}`;
-        window.open(fbUrl, '_blank');
+        // Fallback to download if sharing is not supported
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(url), 100);
       }
     } catch (err) {
-      console.error('Error sharing:', err);
+      console.error('Error sharing result:', err);
+      // Final fallback: try to download if everything else fails
+      handleDownload();
     }
   };
 
@@ -151,9 +163,10 @@ export const Predictor = ({ lang, ipos, isDark }) => {
     if (!resultRef.current) return;
     
     try {
+      const scale = Math.max(window.devicePixelRatio || 1, 3);
       const canvas = await html2canvas(resultRef.current, {
         backgroundColor: isDark ? '#020617' : '#ffffff',
-        scale: 2,
+        scale: scale,
         logging: false,
         useCORS: true,
         allowTaint: false,
@@ -175,7 +188,7 @@ export const Predictor = ({ lang, ipos, isDark }) => {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = 'ipo-allotment-result.png';
+        link.download = `IPO_Prediction_${result.companyName.replace(/\s+/g, '_')}.png`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
