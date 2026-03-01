@@ -94,6 +94,30 @@ function AppContent() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [currentPage]);
 
+  // Handle back button for pages
+  useEffect(() => {
+    const handlePopState = (e) => {
+      if (e.state && e.state.page) {
+        setCurrentPage(e.state.page);
+      } else {
+        setCurrentPage('home');
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // Push state when page changes
+  useEffect(() => {
+    if (currentPage !== 'home') {
+      // Only push if the current state is different to avoid duplicates
+      if (!window.history.state || window.history.state.page !== currentPage) {
+        window.history.pushState({ page: currentPage }, '');
+      }
+    }
+  }, [currentPage]);
+
   const renderPage = () => {
     switch (currentPage) {
       case 'predictor': return <Predictor lang={lang} ipos={ipos} isDark={isDark} />;

@@ -18,6 +18,7 @@ import { TRANSLATIONS } from '../constants';
 import { cn } from '../types';
 import ReactConfetti from 'react-confetti';
 import html2canvas from 'html2canvas';
+import { db, ref, push, set, runTransaction } from '../firebase';
 
 export const Predictor = ({ lang, ipos, isDark }) => {
   const [step, setStep] = useState('form');
@@ -53,6 +54,22 @@ export const Predictor = ({ lang, ipos, isDark }) => {
   useEffect(() => {
     localStorage.setItem('predictor_form', JSON.stringify({ accounts, kitta, isFirstTime }));
   }, [accounts, kitta, isFirstTime]);
+
+  // Handle back button
+  useEffect(() => {
+    const handlePopState = (e) => {
+      if (step === 'result') {
+        setStep('form');
+      }
+    };
+
+    if (step === 'result') {
+      window.history.pushState({ step: 'result' }, '');
+    }
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [step]);
 
   const handlePredict = () => {
     if (!selectedIpoId || !oversubscription) return;
@@ -101,6 +118,37 @@ export const Predictor = ({ lang, ipos, isDark }) => {
           { label: lang === 'EN' ? 'Total Accounts' : 'कुल खाता संख्या', value: accounts }
         ]
       });
+
+      // Firebase Integration
+      try {
+        const sentiment = oversub > 10 ? 'Bullish' : oversub > 5 ? 'Positive' : oversub > 2 ? 'Neutral' : 'Cautious';
+        
+        // A. Save prediction result
+        const predictionsRef = ref(db, 'predictions');
+        push(predictionsRef, {
+          companyName: selectedIpo.name,
+          totalAccounts: numAccounts,
+          perAccountOdds: (pPerAccount * 100).toFixed(2) + '%',
+          marketSentiment: sentiment,
+          timestamp: Date.now()
+        });
+
+        // B. Update stats
+        const statsRef = ref(db, 'stats');
+        
+        // Increment totalPredictions
+        runTransaction(ref(db, 'stats/totalPredictions'), (currentValue) => {
+          return (currentValue || 0) + 1;
+        });
+
+        // Increment companySearchCount
+        const companyId = selectedIpo.name.replace(/\s+/g, '_').toLowerCase();
+        runTransaction(ref(db, `stats/companySearchCount/${companyId}`), (currentValue) => {
+          return (currentValue || 0) + 1;
+        });
+      } catch (fbError) {
+        console.error('Firebase save failed:', fbError);
+      }
       
       setLoading(false);
       setStep('result');
@@ -112,15 +160,106 @@ export const Predictor = ({ lang, ipos, isDark }) => {
     
     setIsSharing(true);
     try {
-      // Ensure the element is visible and rendered
       const element = resultRef.current;
+      
+      // Ensure the element is visible and scrolled into view for best capture
+      element.scrollIntoView({ behavior: 'instant', block: 'center' });
+      
+      // Small delay to ensure scroll is finished
+      await new Promise(resolve => setTimeout(resolve, 100));
       
       const canvas = await html2canvas(element, {
         backgroundColor: isDark ? '#020617' : '#ffffff',
         scale: 2,
         logging: false,
         useCORS: true,
-        allowTaint: true,
+        allowTaint: false,
+        onclone: (clonedDoc) => {
+          const buttons = clonedDoc.querySelector('.no-download');
+          if (buttons) buttons.style.display = 'none';
+          
+          const card = clonedDoc.querySelector('#resultCard');
+          if (card) {
+            card.style.borderRadius = '24px';
+            card.style.boxShadow = 'none';
+            card.style.transform = 'none';
+            card.style.margin = '0';
+            card.style.padding = '40px';
+          }
+        }
+      });
+      
+      if (!canvas) throw new Error('Canvas generation failed');
+
+      const blob = await new Promise((resolve, reject) => {
+        try {
+          canvas.toBlob((b) => {
+            if (b) resolve(b);
+            else reject(new Error('Blob is null'));
+          }, 'image/png', 0.9);
+        } catch (e) {
+          reject(e);
+        }
+      });
+
+      const fileName = `IPO_Result_${result.companyName.replace(/[^a-zA-Z0-9]/g, '_')}.png`;
+      const file = new File([blob], fileName, { type: 'image/png' });
+      
+      const shareText = lang === 'EN' 
+        ? `My IPO allotment probability for ${result.companyName} is ${result.probability}%!` 
+        : `${result.companyName} को लागि मेरो IPO बाँडफाँड सम्भावना ${result.probability}% छ!`;
+
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({
+            files: [file],
+            title: 'IPO Allotment Result',
+            text: shareText
+          });
+        } catch (shareErr) {
+          if (shareErr.name === 'AbortError') return;
+          console.error('Navigator share failed:', shareErr);
+          // Fallback to text share if file share fails
+          await navigator.share({
+            title: 'IPO Allotment Result',
+            text: shareText,
+            url: window.location.href
+          });
+        }
+      } else if (navigator.share) {
+        // Fallback to text sharing if file sharing is not supported
+        await navigator.share({
+          title: 'IPO Allotment Result',
+          text: shareText,
+          url: window.location.href
+        });
+      } else {
+        // No navigator.share support, fallback to download
+        await handleDownload();
+      }
+    } catch (err) {
+      console.error('Share process failed:', err);
+      if (err.name !== 'AbortError') {
+        // Final fallback: try to download
+        await handleDownload();
+      }
+    } finally {
+      setIsSharing(false);
+    }
+  };
+
+  const handleDownload = async () => {
+    if (!resultRef.current || isDownloading) return;
+    
+    setIsDownloading(true);
+    try {
+      const element = resultRef.current;
+      const canvas = await html2canvas(element, {
+        backgroundColor: isDark ? '#020617' : '#ffffff',
+        scale: 2,
+        logging: false,
+        useCORS: true,
+        allowTaint: false,
         onclone: (clonedDoc) => {
           const buttons = clonedDoc.querySelector('.no-download');
           if (buttons) buttons.style.display = 'none';
@@ -136,90 +275,34 @@ export const Predictor = ({ lang, ipos, isDark }) => {
       
       if (!canvas) throw new Error('Canvas generation failed');
 
-      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png', 0.9));
-      if (!blob) throw new Error('Blob creation failed');
+      // Try toBlob first
+      try {
+        const blob = await new Promise((resolve, reject) => {
+          canvas.toBlob((b) => {
+            if (b) resolve(b);
+            else reject(new Error('Blob is null'));
+          }, 'image/png', 0.9);
+        });
 
-      const fileName = `IPO_Result_${result.companyName.replace(/[^a-zA-Z0-9]/g, '_')}.png`;
-      const file = new File([blob], fileName, { type: 'image/png' });
-      
-      const shareText = lang === 'EN' 
-        ? `My IPO allotment probability for ${result.companyName} is ${result.probability}%!` 
-        : `${result.companyName} को लागि मेरो IPO बाँडफाँड सम्भावना ${result.probability}% छ!`;
-
-      if (navigator.share) {
-        try {
-          // Check if file sharing is supported
-          const canShareFiles = navigator.canShare && navigator.canShare({ files: [file] });
-          
-          if (canShareFiles) {
-            await navigator.share({
-              files: [file],
-              title: 'IPO Allotment Result',
-              text: shareText
-            });
-          } else {
-            // Fallback to text sharing
-            await navigator.share({
-              title: 'IPO Allotment Result',
-              text: shareText,
-              url: window.location.href
-            });
-          }
-        } catch (shareErr) {
-          if (shareErr.name === 'AbortError') return;
-          console.error('Navigator share failed:', shareErr);
-          throw shareErr;
-        }
-      } else {
-        throw new Error('Web Share not supported');
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `IPO_Result_${result.companyName.replace(/[^a-zA-Z0-9]/g, '_')}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(url), 100);
+      } catch (blobErr) {
+        console.warn('toBlob failed, using toDataURL fallback:', blobErr);
+        // Fallback to toDataURL using the canvas object
+        const dataUrl = canvas.toDataURL('image/png');
+        const link = document.createElement('a');
+        link.href = dataUrl;
+        link.download = `IPO_Result_${result.companyName.replace(/[^a-zA-Z0-9]/g, '_')}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
       }
-    } catch (err) {
-      console.error('Share process failed:', err);
-      if (err.name !== 'AbortError') {
-        // Fallback to download if sharing fails or is not supported
-        handleDownload();
-      }
-    } finally {
-      setIsSharing(false);
-    }
-  };
-
-  const handleDownload = async () => {
-    if (!resultRef.current || isDownloading) return;
-    
-    setIsDownloading(true);
-    try {
-      const canvas = await html2canvas(resultRef.current, {
-        backgroundColor: isDark ? '#020617' : '#ffffff',
-        scale: 2,
-        logging: false,
-        useCORS: true,
-        allowTaint: true,
-        onclone: (clonedDoc) => {
-          const buttons = clonedDoc.querySelector('.no-download');
-          if (buttons) buttons.style.display = 'none';
-          
-          const card = clonedDoc.querySelector('#resultCard');
-          if (card) {
-            card.style.borderRadius = '24px';
-            card.style.boxShadow = 'none';
-          }
-        }
-      });
-      
-      if (!canvas) throw new Error('Canvas generation failed');
-
-      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png', 0.9));
-      if (!blob) return;
-
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `IPO_Result_${result.companyName.replace(/\s+/g, '_')}.png`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      setTimeout(() => URL.revokeObjectURL(url), 100);
     } catch (err) {
       console.error('Download failed:', err);
     } finally {
