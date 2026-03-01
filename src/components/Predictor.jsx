@@ -55,6 +55,13 @@ export const Predictor = ({ lang, ipos, isDark }) => {
     localStorage.setItem('predictor_form', JSON.stringify({ accounts, kitta, isFirstTime }));
   }, [accounts, kitta, isFirstTime]);
 
+  // Sync oversubscription when selected IPO changes
+  useEffect(() => {
+    if (selectedIpo && selectedIpo.oversubscription) {
+      setOversubscription(selectedIpo.oversubscription.toString());
+    }
+  }, [selectedIpo]);
+
   // Handle back button
   useEffect(() => {
     const handlePopState = (e) => {

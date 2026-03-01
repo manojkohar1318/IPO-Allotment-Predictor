@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Plus, 
@@ -11,8 +11,9 @@ import {
   Database,
   Clock
 } from 'lucide-react';
-import { SECTORS } from '../constants';
+import { SECTORS, DUMMY_IPOS } from '../constants';
 import { cn } from '../types';
+import { db, ref, set, push, update, remove } from '../firebase';
 
 export const AdminDashboard = ({ lang, ipos, setIpos, countdownData, setCountdownData, isDark }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -37,13 +38,31 @@ export const AdminDashboard = ({ lang, ipos, setIpos, countdownData, setCountdow
     closeDate: ''
   });
 
+  // Sync countdown form when data changes from Firebase
+  useEffect(() => {
+    if (countdownData) {
+      setCountdownForm({
+        company: countdownData.company,
+        targetDate: countdownData.targetDate.split('T')[0] + 'T' + countdownData.targetDate.split('T')[1].substring(0, 5)
+      });
+    }
+  }, [countdownData]);
+
   const handleUpdateCountdown = (e) => {
     e.preventDefault();
-    setCountdownData({
+    const newCountdown = {
       company: countdownForm.company,
       targetDate: new Date(countdownForm.targetDate).toISOString()
-    });
-    alert('Countdown updated successfully!');
+    };
+    
+    set(ref(db, 'countdown'), newCountdown)
+      .then(() => {
+        alert('Countdown updated in Firebase successfully!');
+      })
+      .catch(err => {
+        console.error(err);
+        alert('Failed to update countdown in Firebase.');
+      });
   };
 
   const handleOpenModal = (ipo) => {
@@ -73,15 +92,19 @@ export const AdminDashboard = ({ lang, ipos, setIpos, countdownData, setCountdow
     
     try {
       if (editingIpo) {
-        setIpos(prev => prev.map(item => item.id === editingIpo.id ? { ...item, ...formData } : item));
+        // Update existing IPO in Firebase
+        const ipoRef = ref(db, `ipos/${editingIpo.id}`);
+        set(ipoRef, formData)
+          .then(() => setIsModalOpen(false))
+          .catch(err => setError("Failed to update IPO in Firebase."));
       } else {
-        const newIpo = {
-          ...formData,
-          id: Math.random().toString(36).substr(2, 9),
-        };
-        setIpos(prev => [newIpo, ...prev]);
+        // Add new IPO to Firebase
+        const iposRef = ref(db, 'ipos');
+        const newIpoRef = push(iposRef);
+        set(newIpoRef, formData)
+          .then(() => setIsModalOpen(false))
+          .catch(err => setError("Failed to add IPO to Firebase."));
       }
-      setIsModalOpen(false);
     } catch (err) {
       console.error(err);
       setError("Failed to save IPO data.");
@@ -90,7 +113,10 @@ export const AdminDashboard = ({ lang, ipos, setIpos, countdownData, setCountdow
 
   const handleDelete = (id) => {
     if (!window.confirm('Are you sure you want to delete this IPO?')) return;
-    setIpos(prev => prev.filter(item => item.id !== id));
+    
+    const ipoRef = ref(db, `ipos/${id}`);
+    set(ipoRef, null) // Deleting in Firebase
+      .catch(err => alert("Failed to delete IPO from Firebase."));
   };
 
   const filteredIpos = ipos.filter(ipo => 
@@ -105,14 +131,36 @@ export const AdminDashboard = ({ lang, ipos, setIpos, countdownData, setCountdow
           <h1 className={cn("text-4xl font-black mb-2 flex items-center gap-3", isDark ? "text-white" : "text-slate-900")}>
             <Database className="text-emerald-500" /> Admin Panel
           </h1>
-          <p className={isDark ? "text-slate-400" : "text-slate-500"}>Manage IPO data and site content (Local Session Only).</p>
+          <p className={isDark ? "text-slate-400" : "text-slate-500"}>Manage IPO data and site content (Synced with Firebase).</p>
         </div>
-        <button 
-          onClick={() => handleOpenModal()}
-          className="btn-gold px-8 py-4 flex items-center gap-2"
-        >
-          <Plus className="w-5 h-5" /> Add New IPO
-        </button>
+        <div className="flex flex-wrap gap-4">
+          <button 
+            onClick={() => {
+              if (window.confirm('This will overwrite existing Firebase IPO data with dummy data. Continue?')) {
+                const iposRef = ref(db, 'ipos');
+                const dataToSeed = {};
+                DUMMY_IPOS.forEach(ipo => {
+                  const { id, ...rest } = ipo;
+                  const newRef = push(iposRef);
+                  dataToSeed[newRef.key] = rest;
+                });
+                set(iposRef, dataToSeed).then(() => alert('Dummy data seeded!'));
+              }
+            }}
+            className={cn(
+              "px-6 py-4 rounded-xl font-bold border transition-all",
+              isDark ? "bg-white/5 border-white/10 hover:bg-white/10 text-white" : "bg-slate-100 border-slate-200 hover:bg-slate-200 text-slate-900"
+            )}
+          >
+            Seed Dummy Data
+          </button>
+          <button 
+            onClick={() => handleOpenModal()}
+            className="btn-gold px-8 py-4 flex items-center gap-2"
+          >
+            <Plus className="w-5 h-5" /> Add New IPO
+          </button>
+        </div>
       </div>
 
       {error && (

@@ -28,6 +28,7 @@ import { TermsOfService } from './components/TermsOfService';
 import { DisclaimerPage } from './components/DisclaimerPage';
 import { cn } from './types';
 import { DUMMY_IPOS } from './constants';
+import { db, ref, onValue } from './firebase';
 
 function AppContent() {
   const [lang, setLang] = useState('EN');
@@ -40,6 +41,37 @@ function AppContent() {
   });
   const [timeLeft, setTimeLeft] = useState({ d: 0, h: 0, m: 0, s: 0 });
   const t = TRANSLATIONS[lang];
+
+  // Fetch data from Firebase
+  useEffect(() => {
+    const iposRef = ref(db, 'ipos');
+    const unsubscribeIpos = onValue(iposRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        // Convert object to array if it's stored as an object
+        const ipoList = Object.keys(data).map(key => ({
+          ...data[key],
+          id: key
+        }));
+        setIpos(ipoList);
+      } else {
+        setIpos(DUMMY_IPOS);
+      }
+    });
+
+    const countdownRef = ref(db, 'countdown');
+    const unsubscribeCountdown = onValue(countdownRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        setCountdownData(data);
+      }
+    });
+
+    return () => {
+      unsubscribeIpos();
+      unsubscribeCountdown();
+    };
+  }, []);
 
   // Check for hidden admin page via URL hash
   useEffect(() => {
