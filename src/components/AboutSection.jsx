@@ -45,7 +45,7 @@ export const AboutSection = ({ lang, isDark }) => {
       }
     } catch (err) {
       console.error('Contact form error:', err);
-      setError(`Error: ${err.message}. Please try again later.`);
+      setError(`Error: ${err.message}. If this persists, please email us directly at earnrealcashnepal@gmail.com`);
     } finally {
       setIsSending(false);
     }

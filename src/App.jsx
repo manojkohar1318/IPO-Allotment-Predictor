@@ -280,7 +280,7 @@ function AppContent() {
             <h2 className={cn("text-3xl font-black", isDark ? "text-white" : "text-slate-900")}>{t.recentResults}</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {ipos.slice(0, 6).map((ipo) => (
+            {ipos.slice(0, 2).map((ipo) => (
               <div key={ipo.id} className={cn(
                 "p-6 rounded-2xl border transition-all",
                 isDark ? "bg-white/5 border-white/10 hover:border-white/30" : "bg-white border-slate-200 hover:border-slate-300 shadow-sm"
