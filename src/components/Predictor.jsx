@@ -17,6 +17,7 @@ import {
 import { TRANSLATIONS } from '../constants';
 import { cn } from '../types';
 import ReactConfetti from 'react-confetti';
+import html2canvas from 'html2canvas';
 
 export const Predictor = ({ lang, ipos, isDark }) => {
   const [step, setStep] = useState('form');
@@ -108,7 +109,7 @@ export const Predictor = ({ lang, ipos, isDark }) => {
     if (!resultRef.current) return;
     
     try {
-      const canvas = await window.html2canvas(resultRef.current, {
+      const canvas = await html2canvas(resultRef.current, {
         backgroundColor: '#020617',
         scale: 2,
         logging: false,
@@ -147,27 +148,39 @@ export const Predictor = ({ lang, ipos, isDark }) => {
   };
 
   const handleDownload = async () => {
-    const element = document.getElementById('resultCard');
-    if (!element) return;
+    if (!resultRef.current) return;
     
     try {
-      const canvas = await window.html2canvas(element, {
+      const canvas = await html2canvas(resultRef.current, {
         backgroundColor: isDark ? '#020617' : '#ffffff',
-        scale: 3,
+        scale: 2,
         logging: false,
         useCORS: true,
-        allowTaint: true,
+        allowTaint: false,
         onclone: (clonedDoc) => {
           const buttons = clonedDoc.querySelector('.no-download');
           if (buttons) buttons.style.display = 'none';
+          
+          // Ensure the card looks good in the image
+          const card = clonedDoc.getElementById('resultCard');
+          if (card) {
+            card.style.borderRadius = '2rem';
+            card.style.boxShadow = 'none';
+          }
         }
       });
       
-      const image = canvas.toDataURL('image/png', 1.0);
-      const link = document.createElement('a');
-      link.href = image;
-      link.download = 'ipo-allotment-result.png';
-      link.click();
+      canvas.toBlob((blob) => {
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'ipo-allotment-result.png';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(url), 100);
+      }, 'image/png');
     } catch (err) {
       console.error('Error downloading card:', err);
     }
