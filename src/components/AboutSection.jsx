@@ -28,22 +28,24 @@ export const AboutSection = ({ lang, isDark }) => {
     setError(null);
     
     try {
-      const response = await fetch('/api/contact', {
+      const response = await fetch(`${window.location.origin}/api/contact`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       });
+      
+      const data = await response.json();
       
       if (response.ok) {
         setSendSuccess(true);
         setFormData({ name: '', email: '', message: '' });
         setTimeout(() => setSendSuccess(false), 5000);
       } else {
-        throw new Error('Failed to send message');
+        throw new Error(data.message || 'Failed to send message');
       }
     } catch (err) {
-      console.error(err);
-      setError('Failed to send message. Please try again later.');
+      console.error('Contact form error:', err);
+      setError(`Error: ${err.message}. Please try again later.`);
     } finally {
       setIsSending(false);
     }

@@ -267,22 +267,38 @@ export const Predictor = ({ lang, ipos, isDark }) => {
     
     try {
       // 1. AI Image Generation (Task 4)
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-      const prompt = `Generate a professional, high-resolution (1024x1024) celebratory IPO allotment result card for a company named "${result.companyName}". 
-      The card should clearly show a probability of ${result.probability}%. 
-      Style: Modern, financial, clean, with emerald green and gold accents. 
-      Theme: Success, investment growth, and financial prosperity. 
-      The image should be artistic, high-quality, and suitable for sharing on social media as a "Prediction Success" card. 
-      Include subtle Nepali cultural motifs or symbols of wealth like a "Kalash" or "Lotus" if appropriate, but keep it modern.`;
+      const apiKey = process.env.GEMINI_API_KEY || import.meta.env.VITE_GEMINI_API_KEY;
+      if (!apiKey) {
+        throw new Error('Gemini API Key is missing. Please set GEMINI_API_KEY in your environment.');
+      }
+
+      const ai = new GoogleGenAI({ apiKey });
+      const prompt = `Create a high-resolution (1024x1024) professional financial result card for a stock IPO allotment prediction.
+      
+      Design Elements:
+      - Background: Deep charcoal/navy dark theme with subtle glowing gradients.
+      - Header: A small pill-shaped badge at the top saying "PREDICTION RESULT FOR ${result.companyName.toUpperCase()}".
+      - Main Title: "Your Allotment Probability" in a clean, modern sans-serif font.
+      - Company Name: "${result.companyName}" in large, bold, vibrant coral/red text.
+      - Probability: "${result.probability}%" in massive, high-impact bold text, matching the coral/red color.
+      - Verdict: A checkmark icon followed by "${result.verdict.toUpperCase()}" in bold uppercase text.
+      - Comment: The text "${result.comment}" in a stylish italic font below the probability.
+      - Footer: "GOOD LUCK! 🍀" in gold bold text.
+      - Data Cards: Two semi-transparent dark cards at the bottom showing:
+        1. "PER ACCOUNT ODDS" with the value "${result.breakdown[0].value}"
+        2. "TOTAL ACCOUNTS" with the value "${result.breakdown[1].value}"
+      
+      Overall Style: Sleek, premium, fintech dashboard aesthetic. High contrast, sharp typography, and professional lighting effects. No extra buttons or UI elements, just the card content.`;
 
       const aiResponse = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-image',
+        model: 'gemini-3.1-flash-image-preview',
         contents: {
           parts: [{ text: prompt }],
         },
         config: {
           imageConfig: {
             aspectRatio: "1:1",
+            imageSize: "1K"
           }
         }
       });
@@ -303,6 +319,8 @@ export const Predictor = ({ lang, ipos, isDark }) => {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+      } else {
+        throw new Error('AI image generation failed to return an image. Please try again.');
       }
 
       // 2. Standard Card Download (Existing functionality)
@@ -337,6 +355,7 @@ export const Predictor = ({ lang, ipos, isDark }) => {
       }
     } catch (err) {
       console.error('Download/AI process failed:', err);
+      alert(`Download failed: ${err.message}`);
     } finally {
       setIsDownloading(false);
       setIsGeneratingAI(false);

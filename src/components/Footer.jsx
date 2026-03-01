@@ -106,6 +106,11 @@ export const Footer = ({ lang, setCurrentPage, isDark }) => {
         </div>
 
         <div className={cn("pt-8 border-t flex flex-col md:flex-row justify-between items-center gap-6", isDark ? "border-white/5" : "border-slate-200")}>
+          <div className="hidden">
+            <h2>NEPSE IPO Allotment Predictor</h2>
+            <p>The best IPO allotment predictor in Nepal. Check your IPO allotment probability for Nepali stocks including Hydropower, Microfinance, and more. Get real-time data-driven insights for NEPSE IPOs.</p>
+            <p>Keywords: NEPSE IPO Allotment Predictor, ipo allotment predictor nepal, nepse ipo result, ipo allotment probability, nepse stock market nepal, share market nepal, ipo result checker nepal</p>
+          </div>
           <p className="text-sm text-slate-500">
             © 2026 IPO Predictor Nepal. All rights reserved.
           </p>
