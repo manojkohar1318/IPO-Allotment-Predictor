@@ -12,19 +12,23 @@ import {
   Share2,
   Download,
   Loader2,
-  Facebook
+  Facebook,
+  Sparkles,
+  Image as ImageIcon
 } from 'lucide-react';
 import { TRANSLATIONS } from '../constants';
 import { cn } from '../types';
 import ReactConfetti from 'react-confetti';
 import html2canvas from 'html2canvas';
 import { db, ref, push, set, runTransaction } from '../firebase';
+import { GoogleGenAI } from "@google/genai";
 
 export const Predictor = ({ lang, ipos, isDark }) => {
   const [step, setStep] = useState('form');
   const [loading, setLoading] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const resultRef = useRef(null);
   
   // Form State
@@ -256,10 +260,52 @@ export const Predictor = ({ lang, ipos, isDark }) => {
   };
 
   const handleDownload = async () => {
-    if (!resultRef.current || isDownloading) return;
+    if (!resultRef.current || isDownloading || isGeneratingAI) return;
     
     setIsDownloading(true);
+    setIsGeneratingAI(true);
+    
     try {
+      // 1. AI Image Generation (Task 4)
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      const prompt = `Generate a professional, high-resolution (1024x1024) celebratory IPO allotment result card for a company named "${result.companyName}". 
+      The card should clearly show a probability of ${result.probability}%. 
+      Style: Modern, financial, clean, with emerald green and gold accents. 
+      Theme: Success, investment growth, and financial prosperity. 
+      The image should be artistic, high-quality, and suitable for sharing on social media as a "Prediction Success" card. 
+      Include subtle Nepali cultural motifs or symbols of wealth like a "Kalash" or "Lotus" if appropriate, but keep it modern.`;
+
+      const aiResponse = await ai.models.generateContent({
+        model: 'gemini-2.5-flash-image',
+        contents: {
+          parts: [{ text: prompt }],
+        },
+        config: {
+          imageConfig: {
+            aspectRatio: "1:1",
+          }
+        }
+      });
+
+      let aiImageUrl = null;
+      for (const part of aiResponse.candidates[0].content.parts) {
+        if (part.inlineData) {
+          aiImageUrl = `data:image/png;base64,${part.inlineData.data}`;
+          break;
+        }
+      }
+
+      if (aiImageUrl) {
+        // Automatically download the AI generated image
+        const link = document.createElement('a');
+        link.href = aiImageUrl;
+        link.download = `AI_IPO_Result_${result.companyName.replace(/[^a-zA-Z0-9]/g, '_')}_1024x1024.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+
+      // 2. Standard Card Download (Existing functionality)
       const element = resultRef.current;
       const canvas = await html2canvas(element, {
         backgroundColor: isDark ? '#020617' : '#ffffff',
@@ -280,28 +326,7 @@ export const Predictor = ({ lang, ipos, isDark }) => {
         }
       });
       
-      if (!canvas) throw new Error('Canvas generation failed');
-
-      // Try toBlob first
-      try {
-        const blob = await new Promise((resolve, reject) => {
-          canvas.toBlob((b) => {
-            if (b) resolve(b);
-            else reject(new Error('Blob is null'));
-          }, 'image/png', 0.9);
-        });
-
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `IPO_Result_${result.companyName.replace(/[^a-zA-Z0-9]/g, '_')}.png`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        setTimeout(() => URL.revokeObjectURL(url), 100);
-      } catch (blobErr) {
-        console.warn('toBlob failed, using toDataURL fallback:', blobErr);
-        // Fallback to toDataURL using the canvas object
+      if (canvas) {
         const dataUrl = canvas.toDataURL('image/png');
         const link = document.createElement('a');
         link.href = dataUrl;
@@ -311,9 +336,10 @@ export const Predictor = ({ lang, ipos, isDark }) => {
         document.body.removeChild(link);
       }
     } catch (err) {
-      console.error('Download failed:', err);
+      console.error('Download/AI process failed:', err);
     } finally {
       setIsDownloading(false);
+      setIsGeneratingAI(false);
     }
   };
 
@@ -548,14 +574,28 @@ export const Predictor = ({ lang, ipos, isDark }) => {
                   </button>
                   <button 
                     onClick={handleDownload}
-                    disabled={isDownloading}
+                    disabled={isDownloading || isGeneratingAI}
                     className={cn(
                       "w-full sm:w-auto px-10 py-5 rounded-2xl font-bold border transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed",
                       isDark ? "bg-white/5 border-white/10 hover:bg-white/10 text-white" : "bg-slate-100 border-slate-200 hover:bg-slate-200 text-slate-900"
                     )}
                   >
-                    {isDownloading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
-                    {isDownloading ? (lang === 'EN' ? 'Processing...' : 'प्रक्रिया हुँदैछ...') : t.downloadCard}
+                    {isGeneratingAI ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        {lang === 'EN' ? 'AI Generating...' : 'AI सिर्जना गर्दै...'}
+                      </>
+                    ) : isDownloading ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        {lang === 'EN' ? 'Processing...' : 'प्रक्रिया हुँदैछ...'}
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-5 h-5" />
+                        {t.downloadCard}
+                      </>
+                    )}
                   </button>
                 </div>
               </div>

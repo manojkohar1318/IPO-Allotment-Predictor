@@ -8,7 +8,8 @@ import {
   MessageCircle,
   TrendingUp,
   Info,
-  Heart
+  Heart,
+  CheckCircle2
 } from 'lucide-react';
 import { TRANSLATIONS } from '../constants';
 import { cn } from '../types';
@@ -17,36 +18,59 @@ export const AboutSection = ({ lang, isDark }) => {
   const t = TRANSLATIONS[lang];
   const [formData, setFormData] = React.useState({ name: '', email: '', message: '' });
 
-  const handleSendMessage = (e) => {
+  const [isSending, setIsSending] = React.useState(false);
+  const [sendSuccess, setSendSuccess] = React.useState(false);
+  const [error, setError] = React.useState(null);
+
+  const handleSendMessage = async (e) => {
     e.preventDefault();
-    const subject = `New Message from ${formData.name}`;
-    const body = `Name: ${formData.name}\nEmail: ${formData.email}\n\nMessage:\n${formData.message}`;
-    const mailtoUrl = `mailto:earnrealcashnepal@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    window.location.href = mailtoUrl;
+    setIsSending(true);
+    setError(null);
+    
+    try {
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+      
+      if (response.ok) {
+        setSendSuccess(true);
+        setFormData({ name: '', email: '', message: '' });
+        setTimeout(() => setSendSuccess(false), 5000);
+      } else {
+        throw new Error('Failed to send message');
+      }
+    } catch (err) {
+      console.error(err);
+      setError('Failed to send message. Please try again later.');
+    } finally {
+      setIsSending(false);
+    }
   };
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-12 space-y-24">
       {/* Hero Section */}
-      <section className="text-center space-y-8">
+      <section className="text-center space-y-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-xs font-bold uppercase tracking-widest mb-6">
-            <Info className="w-4 h-4" /> {t.about}
-          </div>
-          <h1 className={cn(
-            "text-4xl md:text-6xl font-black mb-8 leading-tight",
-            isDark ? "text-white" : "text-slate-900"
-          )}>
-            Empowering Your <span className="text-emerald-500">Investment</span> Journey
-          </h1>
-          <div className={cn(
-            "glass p-8 md:p-12 rounded-[3rem] border max-w-4xl mx-auto text-left space-y-6",
+          <h1 className={cn("text-4xl font-black", isDark ? "text-white" : "text-slate-900")}>{t.about}</h1>
+          <p className={isDark ? "text-slate-400" : "text-slate-500"}>Empowering your investment journey with data-driven insights.</p>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className={cn(
+            "glass p-8 md:p-12 rounded-[3rem] border max-w-4xl mx-auto text-left space-y-6 mt-12",
             isDark ? "border-white/10" : "border-slate-200 bg-white/50"
-          )}>
+          )}
+        >
             <p className={cn("text-lg md:text-xl leading-relaxed", isDark ? "text-slate-300" : "text-slate-600")}>
               Welcome to our IPO Allotment Probability website — a simple platform created to help investors understand their approximate chances of getting IPO shares.
             </p>
@@ -62,9 +86,8 @@ export const AboutSection = ({ lang, isDark }) => {
             <p className="text-lg md:text-xl text-emerald-500 font-bold">
               Thank you for visiting and exploring IPO probabilities with us!
             </p>
-          </div>
-        </motion.div>
-      </section>
+          </motion.div>
+        </section>
 
       {/* Values Section */}
       <section className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -195,7 +218,33 @@ export const AboutSection = ({ lang, isDark }) => {
               )} 
             />
           </div>
-          <button type="submit" className="btn-gold w-full py-4 text-lg">Send Message</button>
+          <button 
+            type="submit" 
+            disabled={isSending}
+            className={cn(
+              "btn-gold w-full py-4 text-lg flex items-center justify-center gap-2",
+              isSending && "opacity-70 cursor-not-allowed"
+            )}
+          >
+            {isSending ? (
+              <>
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Sending...
+              </>
+            ) : sendSuccess ? (
+              <>
+                <CheckCircle2 className="w-6 h-6" /> Message Sent!
+              </>
+            ) : (
+              'Send Message'
+            )}
+          </button>
+          {error && (
+            <p className="text-red-500 text-sm text-center font-bold">{error}</p>
+          )}
+          {sendSuccess && (
+            <p className="text-emerald-500 text-sm text-center font-bold">We've received your message and will get back to you soon!</p>
+          )}
         </form>
       </section>
     </div>
