@@ -17,7 +17,6 @@ import {
 import { TRANSLATIONS } from '../constants';
 import { cn } from '../types';
 import ReactConfetti from 'react-confetti';
-import html2canvas from 'html2canvas';
 
 export const Predictor = ({ lang, ipos, isDark }) => {
   const [step, setStep] = useState('form');
@@ -96,8 +95,7 @@ export const Predictor = ({ lang, ipos, isDark }) => {
         companyName: lang === 'EN' ? selectedIpo.name : selectedIpo.nameNP,
         breakdown: [
           { label: lang === 'EN' ? 'Per Account Odds' : 'प्रति खाता सम्भावना', value: `${(pPerAccount * 100).toFixed(2)}%` },
-          { label: lang === 'EN' ? 'Total Accounts' : 'कुल खाता संख्या', value: accounts },
-          { label: lang === 'EN' ? 'Market Sentiment' : 'बजारको मनोविज्ञान', value: oversub > 50 ? 'Aggressive' : 'Neutral' }
+          { label: lang === 'EN' ? 'Total Accounts' : 'कुल खाता संख्या', value: accounts }
         ]
       });
       
@@ -110,7 +108,7 @@ export const Predictor = ({ lang, ipos, isDark }) => {
     if (!resultRef.current) return;
     
     try {
-      const canvas = await html2canvas(resultRef.current, {
+      const canvas = await window.html2canvas(resultRef.current, {
         backgroundColor: '#020617',
         scale: 2,
         logging: false,
@@ -149,24 +147,26 @@ export const Predictor = ({ lang, ipos, isDark }) => {
   };
 
   const handleDownload = async () => {
-    if (!resultRef.current) return;
+    const element = document.getElementById('resultCard');
+    if (!element) return;
     
     try {
-      const canvas = await html2canvas(resultRef.current, {
-        backgroundColor: '#020617', // navy-950
-        scale: 2,
+      const canvas = await window.html2canvas(element, {
+        backgroundColor: isDark ? '#020617' : '#ffffff',
+        scale: 3,
         logging: false,
         useCORS: true,
+        allowTaint: true,
         onclone: (clonedDoc) => {
           const buttons = clonedDoc.querySelector('.no-download');
           if (buttons) buttons.style.display = 'none';
         }
       });
       
-      const image = canvas.toDataURL('image/png');
+      const image = canvas.toDataURL('image/png', 1.0);
       const link = document.createElement('a');
       link.href = image;
-      link.download = `IPO_Prediction_${result.companyName.replace(/\s+/g, '_')}.png`;
+      link.download = 'ipo-allotment-result.png';
       link.click();
     } catch (err) {
       console.error('Error downloading card:', err);
@@ -342,7 +342,7 @@ export const Predictor = ({ lang, ipos, isDark }) => {
               <ArrowLeft className="w-5 h-5" /> {t.backToForm}
             </button>
 
-            <div ref={resultRef} className={cn(
+            <div id="resultCard" ref={resultRef} className={cn(
               "p-10 md:p-16 rounded-[4rem] border text-center relative overflow-hidden",
               isDark ? "glass border-white/10" : "bg-white border-slate-200 shadow-xl"
             )}>
@@ -381,7 +381,7 @@ export const Predictor = ({ lang, ipos, isDark }) => {
                   </p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {result?.breakdown.map((item, i) => (
                     <div key={i} className={cn(
                       "p-6 rounded-3xl border",
