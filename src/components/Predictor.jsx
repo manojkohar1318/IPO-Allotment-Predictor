@@ -22,6 +22,8 @@ import html2canvas from 'html2canvas';
 export const Predictor = ({ lang, ipos, isDark }) => {
   const [step, setStep] = useState('form');
   const [loading, setLoading] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const resultRef = useRef(null);
   
   // Form State
@@ -106,96 +108,122 @@ export const Predictor = ({ lang, ipos, isDark }) => {
   };
 
   const handleShare = async () => {
-    if (!resultRef.current) return;
+    if (!resultRef.current || isSharing) return;
     
+    setIsSharing(true);
     try {
-      const scale = Math.max(window.devicePixelRatio || 1, 3);
-      const canvas = await html2canvas(resultRef.current, {
+      // Ensure the element is visible and rendered
+      const element = resultRef.current;
+      
+      const canvas = await html2canvas(element, {
         backgroundColor: isDark ? '#020617' : '#ffffff',
-        scale: scale,
+        scale: 2,
         logging: false,
         useCORS: true,
-        allowTaint: false,
+        allowTaint: true,
         onclone: (clonedDoc) => {
           const buttons = clonedDoc.querySelector('.no-download');
           if (buttons) buttons.style.display = 'none';
           
-          const card = clonedDoc.getElementById('resultCard');
+          const card = clonedDoc.querySelector('#resultCard');
           if (card) {
-            card.style.borderRadius = '2rem';
+            card.style.borderRadius = '24px';
             card.style.boxShadow = 'none';
+            card.style.transform = 'none';
           }
         }
       });
       
-      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png', 1.0));
-      if (!blob) throw new Error('Failed to create blob');
+      if (!canvas) throw new Error('Canvas generation failed');
 
-      const fileName = `IPO_Prediction_${result.companyName.replace(/\s+/g, '_')}.png`;
+      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png', 0.9));
+      if (!blob) throw new Error('Blob creation failed');
+
+      const fileName = `IPO_Result_${result.companyName.replace(/[^a-zA-Z0-9]/g, '_')}.png`;
       const file = new File([blob], fileName, { type: 'image/png' });
-      const shareData = {
-        title: 'NEPSE IPO Allotment Prediction',
-        text: lang === 'EN' ? 'Check out my IPO allotment probability result!' : 'मेरो IPO बाँडफाँड सम्भावनाको नतिजा हेर्नुहोस्!',
-        files: [file]
-      };
+      
+      const shareText = lang === 'EN' 
+        ? `My IPO allotment probability for ${result.companyName} is ${result.probability}%!` 
+        : `${result.companyName} को लागि मेरो IPO बाँडफाँड सम्भावना ${result.probability}% छ!`;
 
-      if (navigator.canShare && navigator.canShare(shareData)) {
-        await navigator.share(shareData);
+      if (navigator.share) {
+        try {
+          // Check if file sharing is supported
+          const canShareFiles = navigator.canShare && navigator.canShare({ files: [file] });
+          
+          if (canShareFiles) {
+            await navigator.share({
+              files: [file],
+              title: 'IPO Allotment Result',
+              text: shareText
+            });
+          } else {
+            // Fallback to text sharing
+            await navigator.share({
+              title: 'IPO Allotment Result',
+              text: shareText,
+              url: window.location.href
+            });
+          }
+        } catch (shareErr) {
+          if (shareErr.name === 'AbortError') return;
+          console.error('Navigator share failed:', shareErr);
+          throw shareErr;
+        }
       } else {
-        // Fallback to download if sharing is not supported
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = fileName;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        setTimeout(() => URL.revokeObjectURL(url), 100);
+        throw new Error('Web Share not supported');
       }
     } catch (err) {
-      console.error('Error sharing result:', err);
-      // Final fallback: try to download if everything else fails
-      handleDownload();
+      console.error('Share process failed:', err);
+      if (err.name !== 'AbortError') {
+        // Fallback to download if sharing fails or is not supported
+        handleDownload();
+      }
+    } finally {
+      setIsSharing(false);
     }
   };
 
   const handleDownload = async () => {
-    if (!resultRef.current) return;
+    if (!resultRef.current || isDownloading) return;
     
+    setIsDownloading(true);
     try {
-      const scale = Math.max(window.devicePixelRatio || 1, 3);
       const canvas = await html2canvas(resultRef.current, {
         backgroundColor: isDark ? '#020617' : '#ffffff',
-        scale: scale,
+        scale: 2,
         logging: false,
         useCORS: true,
-        allowTaint: false,
+        allowTaint: true,
         onclone: (clonedDoc) => {
           const buttons = clonedDoc.querySelector('.no-download');
           if (buttons) buttons.style.display = 'none';
           
-          // Ensure the card looks good in the image
-          const card = clonedDoc.getElementById('resultCard');
+          const card = clonedDoc.querySelector('#resultCard');
           if (card) {
-            card.style.borderRadius = '2rem';
+            card.style.borderRadius = '24px';
             card.style.boxShadow = 'none';
           }
         }
       });
       
-      canvas.toBlob((blob) => {
-        if (!blob) return;
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `IPO_Prediction_${result.companyName.replace(/\s+/g, '_')}.png`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        setTimeout(() => URL.revokeObjectURL(url), 100);
-      }, 'image/png');
+      if (!canvas) throw new Error('Canvas generation failed');
+
+      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png', 0.9));
+      if (!blob) return;
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `IPO_Result_${result.companyName.replace(/\s+/g, '_')}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(url), 100);
     } catch (err) {
-      console.error('Error downloading card:', err);
+      console.error('Download failed:', err);
+    } finally {
+      setIsDownloading(false);
     }
   };
 
@@ -422,18 +450,22 @@ export const Predictor = ({ lang, ipos, isDark }) => {
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-6 no-download">
                   <button 
                     onClick={handleShare}
-                    className="btn-gold w-full sm:w-auto px-10 py-5 flex items-center justify-center gap-3"
+                    disabled={isSharing}
+                    className="btn-gold w-full sm:w-auto px-10 py-5 flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <Share2 className="w-5 h-5" /> {t.shareResult}
+                    {isSharing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Share2 className="w-5 h-5" />}
+                    {isSharing ? (lang === 'EN' ? 'Processing...' : 'प्रक्रिया हुँदैछ...') : t.shareResult}
                   </button>
                   <button 
                     onClick={handleDownload}
+                    disabled={isDownloading}
                     className={cn(
-                      "w-full sm:w-auto px-10 py-5 rounded-2xl font-bold border transition-all flex items-center justify-center gap-3",
+                      "w-full sm:w-auto px-10 py-5 rounded-2xl font-bold border transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed",
                       isDark ? "bg-white/5 border-white/10 hover:bg-white/10 text-white" : "bg-slate-100 border-slate-200 hover:bg-slate-200 text-slate-900"
                     )}
                   >
-                    <Download className="w-5 h-5" /> {t.downloadCard}
+                    {isDownloading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
+                    {isDownloading ? (lang === 'EN' ? 'Processing...' : 'प्रक्रिया हुँदैछ...') : t.downloadCard}
                   </button>
                 </div>
               </div>
