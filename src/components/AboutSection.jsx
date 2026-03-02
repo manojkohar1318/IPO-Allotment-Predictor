@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import emailjs from '@emailjs/browser';
 import { 
   Target, 
   Globe, 
@@ -28,31 +29,39 @@ export const AboutSection = ({ lang, isDark }) => {
     setError(null);
     
     try {
-      console.log('[CLIENT] Sending message:', formData);
-      const response = await fetch('/api/contact', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
+      console.log('[CLIENT] Sending message via EmailJS:', formData);
       
-      console.log('[CLIENT] Response status:', response.status);
-      const contentType = response.headers.get("content-type");
-      let data;
-      if (contentType && contentType.includes("application/json")) {
-        data = await response.json();
-      } else {
-        const text = await response.text();
-        throw new Error(`Server returned non-JSON response: ${text.substring(0, 50)}...`);
+      const serviceId = import.meta.env.VITE_EMAILJS_SERVICE_ID;
+      const templateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
+      const publicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
+
+      if (!serviceId || !templateId || !publicKey) {
+        throw new Error('EmailJS is not properly configured. Please check environment variables.');
       }
+
+      const templateParams = {
+        from_name: formData.name,
+        from_email: formData.email,
+        message: formData.message,
+        to_email: 'earnrealcashnepal@gmail.com',
+        subject: 'New Contact Message - IPO Predictor Nepal'
+      };
+
+      const result = await emailjs.send(
+        serviceId,
+        templateId,
+        templateParams,
+        publicKey
+      );
+
+      console.log('[CLIENT] EmailJS Result:', result.text);
       
-      console.log('[CLIENT] Response data:', data);
-      
-      if (response.ok && data.success) {
+      if (result.text === 'OK') {
         setSendSuccess(true);
         setFormData({ name: '', email: '', message: '' });
         setTimeout(() => setSendSuccess(false), 5000);
       } else {
-        throw new Error(data.error || 'Failed to send message');
+        throw new Error('Failed to send message via EmailJS');
       }
     } catch (err) {
       console.error('Contact form error:', err);
