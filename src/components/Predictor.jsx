@@ -13,15 +13,13 @@ import {
   Download,
   Loader2,
   Facebook,
-  Sparkles,
-  Image as ImageIcon
+  Sparkles
 } from 'lucide-react';
 import { TRANSLATIONS } from '../constants';
 import { cn } from '../types';
 import ReactConfetti from 'react-confetti';
 import html2canvas from 'html2canvas';
-import { db, ref, push, set, runTransaction } from '../firebase';
-import { GoogleGenAI } from "@google/genai";
+import { db, ref, push, runTransaction } from '../firebase';
 import { FUNNY_COMMENTS } from '../utils/comments';
 
 export const Predictor = ({ lang, ipos, isDark }) => {
@@ -29,7 +27,6 @@ export const Predictor = ({ lang, ipos, isDark }) => {
   const [loading, setLoading] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
-  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const resultRef = useRef(null);
   
   // Form State
@@ -152,14 +149,10 @@ export const Predictor = ({ lang, ipos, isDark }) => {
         });
 
         // B. Update stats
-        const statsRef = ref(db, 'stats');
-        
-        // Increment totalPredictions
         runTransaction(ref(db, 'stats/totalPredictions'), (currentValue) => {
           return (currentValue || 0) + 1;
         });
 
-        // Increment companySearchCount
         const companyId = selectedIpo.name.replace(/\s+/g, '_').toLowerCase();
         runTransaction(ref(db, `stats/companySearchCount/${companyId}`), (currentValue) => {
           return (currentValue || 0) + 1;
@@ -179,11 +172,7 @@ export const Predictor = ({ lang, ipos, isDark }) => {
     setIsSharing(true);
     try {
       const element = resultRef.current;
-      
-      // Ensure the element is visible and scrolled into view for best capture
       element.scrollIntoView({ behavior: 'instant', block: 'center' });
-      
-      // Small delay to ensure scroll is finished
       await new Promise(resolve => setTimeout(resolve, 100));
       
       const canvas = await html2canvas(element, {
@@ -237,7 +226,6 @@ export const Predictor = ({ lang, ipos, isDark }) => {
         } catch (shareErr) {
           if (shareErr.name === 'AbortError') return;
           console.error('Navigator share failed:', shareErr);
-          // Fallback to text share if file share fails
           await navigator.share({
             title: 'IPO Allotment Result',
             text: shareText,
@@ -245,20 +233,17 @@ export const Predictor = ({ lang, ipos, isDark }) => {
           });
         }
       } else if (navigator.share) {
-        // Fallback to text sharing if file sharing is not supported
         await navigator.share({
           title: 'IPO Allotment Result',
           text: shareText,
           url: window.location.href
         });
       } else {
-        // No navigator.share support, fallback to download
         await handleDownload();
       }
     } catch (err) {
       console.error('Share process failed:', err);
       if (err.name !== 'AbortError') {
-        // Final fallback: try to download
         await handleDownload();
       }
     } finally {
@@ -267,121 +252,116 @@ export const Predictor = ({ lang, ipos, isDark }) => {
   };
 
   const handleDownload = async () => {
-    if (!resultRef.current || isDownloading || isGeneratingAI) return;
+    if (!result || isDownloading) return;
     
     setIsDownloading(true);
-    setIsGeneratingAI(true);
     
     try {
-      // 1. AI Image Generation (Task 4)
-      // Check if user has selected an API key (Required for Veo/Gemini 3.1 Flash Image)
-      if (window.aistudio) {
-        const hasKey = await window.aistudio.hasSelectedApiKey();
-        if (!hasKey) {
-          await window.aistudio.openSelectKey();
-          // After opening, we assume success as per instructions and proceed
+      // Create a hidden canvas
+      const canvas = document.createElement('canvas');
+      canvas.width = 1024;
+      canvas.height = 1024;
+      const ctx = canvas.getContext('2d');
+      
+      if (!ctx) throw new Error('Canvas context not available');
+
+      // 1. Background
+      const gradient = ctx.createRadialGradient(512, 512, 0, 512, 512, 800);
+      gradient.addColorStop(0, '#0f172a'); // slate-900
+      gradient.addColorStop(1, '#020617'); // slate-950
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, 1024, 1024);
+
+      // Subtle glow effect
+      const accentColor = result.probability > 80 ? '#10b981' : result.probability > 50 ? '#10b981' : result.probability > 20 ? '#facc15' : '#ef4444';
+      ctx.globalAlpha = 0.15;
+      const glowGradient = ctx.createRadialGradient(512, 300, 0, 512, 300, 400);
+      glowGradient.addColorStop(0, accentColor);
+      glowGradient.addColorStop(1, 'transparent');
+      ctx.fillStyle = glowGradient;
+      ctx.fillRect(0, 0, 1024, 1024);
+      ctx.globalAlpha = 1.0;
+
+      // 2. Branding
+      ctx.fillStyle = '#94a3b8'; // slate-400
+      ctx.font = 'bold 24px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('IPO PREDICTOR NEPAL', 512, 80);
+
+      // 3. Company Name
+      ctx.fillStyle = '#ffffff';
+      // Dynamic font scaling for company name
+      let fontSize = 80;
+      if (result.companyName.length > 20) fontSize = 60;
+      if (result.companyName.length > 30) fontSize = 45;
+      
+      ctx.font = `black ${fontSize}px sans-serif`;
+      ctx.fillText(result.companyName.toUpperCase(), 512, 220);
+
+      // 4. Probability Title
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = 'bold 32px sans-serif';
+      ctx.fillText(lang === 'EN' ? 'YOUR ALLOTMENT PROBABILITY' : 'तपाईको बाँडफाँडको सम्भावना', 512, 320);
+
+      // 5. Probability Percentage
+      ctx.fillStyle = accentColor;
+      ctx.font = 'black 240px sans-serif';
+      ctx.fillText(`${result.probability}%`, 512, 540);
+
+      // 6. Verdict Badge
+      const verdictText = result.verdict.toUpperCase();
+      ctx.font = 'bold 48px sans-serif';
+      ctx.fillStyle = accentColor;
+      ctx.fillText(verdictText, 512, 640);
+
+      // 7. Comment
+      ctx.fillStyle = '#cbd5e1'; // slate-300
+      ctx.font = 'italic 32px sans-serif';
+      // Wrap text for comment
+      const words = result.comment.split(' ');
+      let line = '';
+      let y = 740;
+      const maxWidth = 800;
+      const lineHeight = 45;
+
+      for (let n = 0; n < words.length; n++) {
+        const testLine = line + words[n] + ' ';
+        const metrics = ctx.measureText(testLine);
+        const testWidth = metrics.width;
+        if (testWidth > maxWidth && n > 0) {
+          ctx.fillText(line, 512, y);
+          line = words[n] + ' ';
+          y += lineHeight;
+        } else {
+          line = testLine;
         }
       }
+      ctx.fillText(line, 512, y);
 
-      let apiKey = process.env.GEMINI_API_KEY || import.meta.env.VITE_GEMINI_API_KEY;
-      
-      // If still no key and not in AI Studio environment that injects it, we might need to fail
-      // but usually process.env.API_KEY is injected after selection.
-      if (!apiKey || apiKey === "undefined") {
-        apiKey = process.env.API_KEY; // Try the injected one
-      }
+      // 8. Footer
+      ctx.fillStyle = '#facc15'; // gold-400
+      ctx.font = 'black 36px sans-serif';
+      ctx.fillText('GOOD LUCK! 🍀', 512, 940);
 
-      if (!apiKey || apiKey === "undefined") {
-        throw new Error('Please select an API key from the dialog to generate the AI card.');
-      }
+      // 9. Border
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+      ctx.lineWidth = 20;
+      ctx.strokeRect(10, 10, 1004, 1004);
 
-      const ai = new GoogleGenAI({ apiKey });
-      const prompt = `Create a high-resolution (1024x1024) professional financial result card for a stock IPO allotment prediction.
-      
-      Design Elements:
-      - Background: Deep charcoal/navy dark theme with subtle glowing gradients.
-      - Header: A small pill-shaped badge at the top saying "PREDICTION RESULT FOR ${result.companyName.toUpperCase()}".
-      - Main Title: "Your Allotment Probability" in a clean, modern sans-serif font.
-      - Company Name: "${result.companyName}" in large, bold, vibrant coral/red text.
-      - Probability: "${result.probability}%" in massive, high-impact bold text, matching the coral/red color.
-      - Verdict: A checkmark icon followed by "${result.verdict.toUpperCase()}" in bold uppercase text.
-      - Comment: The text "${result.comment}" in a stylish italic font below the probability.
-      - Footer: "GOOD LUCK! 🍀" in gold bold text.
-      - Data Cards: Two semi-transparent dark cards at the bottom showing:
-        1. "PER ACCOUNT ODDS" with the value "${result.breakdown[0].value}"
-        2. "TOTAL ACCOUNTS" with the value "${result.breakdown[1].value}"
-      
-      Overall Style: Sleek, premium, fintech dashboard aesthetic. High contrast, sharp typography, and professional lighting effects. No extra buttons or UI elements, just the card content.`;
+      // Convert to image and download
+      const dataUrl = canvas.toDataURL('image/png');
+      const link = document.createElement('a');
+      link.href = dataUrl;
+      link.download = `IPO_Result_${result.companyName.replace(/[^a-zA-Z0-9]/g, '_')}_1024x1024.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
 
-      const aiResponse = await ai.models.generateContent({
-        model: 'gemini-3.1-flash-image-preview',
-        contents: {
-          parts: [{ text: prompt }],
-        },
-        config: {
-          imageConfig: {
-            aspectRatio: "1:1",
-            imageSize: "1K"
-          }
-        }
-      });
-
-      let aiImageUrl = null;
-      for (const part of aiResponse.candidates[0].content.parts) {
-        if (part.inlineData) {
-          aiImageUrl = `data:image/png;base64,${part.inlineData.data}`;
-          break;
-        }
-      }
-
-      if (aiImageUrl) {
-        // Automatically download the AI generated image
-        const link = document.createElement('a');
-        link.href = aiImageUrl;
-        link.download = `AI_IPO_Result_${result.companyName.replace(/[^a-zA-Z0-9]/g, '_')}_1024x1024.png`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      } else {
-        throw new Error('AI image generation failed to return an image. Please try again.');
-      }
-
-      // 2. Standard Card Download (Existing functionality)
-      const element = resultRef.current;
-      const canvas = await html2canvas(element, {
-        backgroundColor: isDark ? '#020617' : '#ffffff',
-        scale: 2,
-        logging: false,
-        useCORS: true,
-        allowTaint: false,
-        onclone: (clonedDoc) => {
-          const buttons = clonedDoc.querySelector('.no-download');
-          if (buttons) buttons.style.display = 'none';
-          
-          const card = clonedDoc.querySelector('#resultCard');
-          if (card) {
-            card.style.borderRadius = '24px';
-            card.style.boxShadow = 'none';
-            card.style.transform = 'none';
-          }
-        }
-      });
-      
-      if (canvas) {
-        const dataUrl = canvas.toDataURL('image/png');
-        const link = document.createElement('a');
-        link.href = dataUrl;
-        link.download = `IPO_Result_${result.companyName.replace(/[^a-zA-Z0-9]/g, '_')}.png`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      }
     } catch (err) {
-      console.error('Download/AI process failed:', err);
+      console.error('Canvas generation failed:', err);
       alert(`Download failed: ${err.message}`);
     } finally {
       setIsDownloading(false);
-      setIsGeneratingAI(false);
     }
   };
 
@@ -616,18 +596,13 @@ export const Predictor = ({ lang, ipos, isDark }) => {
                   </button>
                   <button 
                     onClick={handleDownload}
-                    disabled={isDownloading || isGeneratingAI}
+                    disabled={isDownloading}
                     className={cn(
                       "w-full sm:w-auto px-10 py-5 rounded-2xl font-bold border transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed",
                       isDark ? "bg-white/5 border-white/10 hover:bg-white/10 text-white" : "bg-slate-100 border-slate-200 hover:bg-slate-200 text-slate-900"
                     )}
                   >
-                    {isGeneratingAI ? (
-                      <>
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                        {lang === 'EN' ? 'AI Generating...' : 'AI सिर्जना गर्दै...'}
-                      </>
-                    ) : isDownloading ? (
+                    {isDownloading ? (
                       <>
                         <Loader2 className="w-5 h-5 animate-spin" />
                         {lang === 'EN' ? 'Processing...' : 'प्रक्रिया हुँदैछ...'}
