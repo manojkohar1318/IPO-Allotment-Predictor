@@ -166,79 +166,200 @@ export const Predictor = ({ lang, ipos, isDark }) => {
     }, 1500);
   };
 
+  const generateCardCanvas = async () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1500;
+    canvas.height = 1500;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+
+    // 1. Background Gradient (Dark Navy to Deep Purple)
+    const bgGradient = ctx.createLinearGradient(0, 0, 1500, 1500);
+    bgGradient.addColorStop(0, '#020617'); // navy-950
+    bgGradient.addColorStop(1, '#1e1b4b'); // indigo-950
+    ctx.fillStyle = bgGradient;
+    ctx.fillRect(0, 0, 1500, 1500);
+
+    // Subtle glow effect
+    const isHigh = result.probability > 50;
+    const isMedium = result.probability > 20 && result.probability <= 50;
+    const accentColor = isHigh ? '#10b981' : isMedium ? '#facc15' : '#ef4444';
+    
+    ctx.globalAlpha = 0.2;
+    const glow = ctx.createRadialGradient(750, 750, 0, 750, 750, 800);
+    glow.addColorStop(0, accentColor);
+    glow.addColorStop(1, 'transparent');
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, 0, 1500, 1500);
+    ctx.globalAlpha = 1.0;
+
+    // 2. Main Card Container (Glassmorphism style)
+    const cardX = 100;
+    const cardY = 100;
+    const cardWidth = 1300;
+    const cardHeight = 1300;
+    const cardRadius = 60;
+
+    // Shadow
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+    ctx.shadowBlur = 50;
+    ctx.shadowOffsetY = 20;
+
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.9)'; // slate-900
+    ctx.beginPath();
+    ctx.roundRect(cardX, cardY, cardWidth, cardHeight, cardRadius);
+    ctx.fill();
+
+    // Border for glass effect
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetY = 0;
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // 3. Content
+    ctx.textAlign = 'center';
+
+    // Badge
+    const badgeText = `PREDICTION RESULT FOR ${result.companyName.toUpperCase()}`;
+    ctx.font = 'bold 24px sans-serif';
+    const badgeWidth = ctx.measureText(badgeText).width + 60;
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+    ctx.beginPath();
+    ctx.roundRect(750 - badgeWidth / 2, 180, badgeWidth, 60, 30);
+    ctx.fill();
+    ctx.fillStyle = '#94a3b8';
+    ctx.fillText(badgeText, 750, 218);
+
+    // Title
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = 'bold 40px sans-serif';
+    ctx.fillText(lang === 'EN' ? 'Your Allotment Probability' : 'तपाईको बाँडफाँडको सम्भावना', 750, 320);
+
+    // Helper for wrapping text
+    const wrapText = (text, maxWidth, font) => {
+      ctx.font = font;
+      const words = text.split(' ');
+      const lines = [];
+      let currentLine = words[0];
+      for (let i = 1; i < words.length; i++) {
+        const word = words[i];
+        const width = ctx.measureText(currentLine + " " + word).width;
+        if (width < maxWidth) {
+          currentLine += " " + word;
+        } else {
+          lines.push(currentLine);
+          currentLine = word;
+        }
+      }
+      lines.push(currentLine);
+      return lines;
+    };
+
+    // 4. Company Name (Dynamic Wrapping & Scaling)
+    ctx.fillStyle = accentColor;
+    let baseFontSize = 100;
+    let companyLines = wrapText(result.companyName.toUpperCase(), 1100, `900 ${baseFontSize}px sans-serif`);
+    
+    if (companyLines.length > 2) {
+      baseFontSize = 80;
+      companyLines = wrapText(result.companyName.toUpperCase(), 1100, `900 ${baseFontSize}px sans-serif`);
+    }
+    
+    let currentY = 420;
+    companyLines.forEach(line => {
+      ctx.fillText(line, 750, currentY);
+      currentY += baseFontSize + 20;
+    });
+
+    // 5. Probability Percentage
+    ctx.fillStyle = accentColor;
+    ctx.font = '900 350px sans-serif';
+    ctx.fillText(`${result.probability}%`, 750, currentY + 300);
+
+    // 6. Verdict Badge
+    ctx.font = '900 80px sans-serif';
+    ctx.fillText(result.verdict.toUpperCase(), 750, currentY + 420);
+
+    // 7. Comment (Wrapped)
+    ctx.fillStyle = '#cbd5e1';
+    ctx.font = 'italic 40px sans-serif';
+    const commentLines = wrapText(result.comment, 1100, 'italic 40px sans-serif');
+    let commentY = currentY + 520;
+    commentLines.forEach(line => {
+      ctx.fillText(line, 750, commentY);
+      commentY += 55;
+    });
+
+    // 8. Wish Text
+    ctx.fillStyle = '#eab308';
+    ctx.font = '900 36px sans-serif';
+    ctx.fillText(t.wish.toUpperCase(), 750, commentY + 40);
+
+    // 9. Breakdown Cards
+    const bCardY = 1150;
+    const bCardWidth = 550;
+    const bCardHeight = 180;
+    const bGap = 60;
+
+    const drawBCard = (x, label, value) => {
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+      ctx.beginPath();
+      ctx.roundRect(x, bCardY, bCardWidth, bCardHeight, 30);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+      ctx.stroke();
+
+      ctx.fillStyle = '#64748b';
+      ctx.font = 'bold 24px sans-serif';
+      ctx.fillText(label.toUpperCase(), x + bCardWidth / 2, bCardY + 65);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '900 56px sans-serif';
+      ctx.fillText(value, x + bCardWidth / 2, bCardY + 135);
+    };
+
+    drawBCard(750 - bCardWidth - bGap / 2, result.breakdown[0].label, result.breakdown[0].value);
+    drawBCard(750 + bGap / 2, result.breakdown[1].label, result.breakdown[1].value);
+
+    // 10. Branding Footer
+    ctx.fillStyle = '#475569';
+    ctx.font = 'bold 24px sans-serif';
+    ctx.fillText('GENERATED BY IPO PREDICTOR NEPAL', 750, 1450);
+
+    return canvas;
+  };
+
   const handleShare = async () => {
-    if (!resultRef.current || isSharing) return;
+    if (!result || isSharing) return;
     
     setIsSharing(true);
     try {
-      const element = resultRef.current;
-      element.scrollIntoView({ behavior: 'instant', block: 'center' });
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      const canvas = await html2canvas(element, {
-        backgroundColor: isDark ? '#020617' : '#ffffff',
-        scale: 2,
-        logging: false,
-        useCORS: true,
-        allowTaint: false,
-        onclone: (clonedDoc) => {
-          const buttons = clonedDoc.querySelector('.no-download');
-          if (buttons) buttons.style.display = 'none';
-          
-          const card = clonedDoc.querySelector('#resultCard');
-          if (card) {
-            card.style.borderRadius = '24px';
-            card.style.boxShadow = 'none';
-            card.style.transform = 'none';
-            card.style.margin = '0';
-            card.style.padding = '40px';
-          }
-        }
-      });
-      
+      const canvas = await generateCardCanvas();
       if (!canvas) throw new Error('Canvas generation failed');
 
-      const blob = await new Promise((resolve, reject) => {
-        try {
-          canvas.toBlob((b) => {
-            if (b) resolve(b);
-            else reject(new Error('Blob is null'));
-          }, 'image/png', 0.9);
-        } catch (e) {
-          reject(e);
-        }
-      });
-
-      const fileName = `IPO_Result_${result.companyName.replace(/[^a-zA-Z0-9]/g, '_')}.png`;
+      const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+      const fileName = `${result.companyName.toLowerCase().replace(/[^a-z0-9]/g, '-')}-ipo-result.png`;
       const file = new File([blob], fileName, { type: 'image/png' });
       
       const shareText = lang === 'EN' 
-        ? `My IPO allotment probability for ${result.companyName} is ${result.probability}%!` 
-        : `${result.companyName} को लागि मेरो IPO बाँडफाँड सम्भावना ${result.probability}% छ!`;
+        ? `Check out my IPO allotment probability for ${result.companyName} from IPO Predictor Nepal!` 
+        : `${result.companyName} को लागि मेरो IPO बाँडफाँड सम्भावना IPO Predictor Nepal बाट हेर्नुहोस्!`;
 
       if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
         try {
           await navigator.share({
             files: [file],
-            title: 'IPO Allotment Result',
+            title: 'My IPO Allotment Result',
             text: shareText
           });
         } catch (shareErr) {
           if (shareErr.name === 'AbortError') return;
           console.error('Navigator share failed:', shareErr);
-          await navigator.share({
-            title: 'IPO Allotment Result',
-            text: shareText,
-            url: window.location.href
-          });
+          // Fallback to download
+          await handleDownload();
         }
-      } else if (navigator.share) {
-        await navigator.share({
-          title: 'IPO Allotment Result',
-          text: shareText,
-          url: window.location.href
-        });
       } else {
+        // No navigator.share support, fallback to download
         await handleDownload();
       }
     } catch (err) {
@@ -257,148 +378,13 @@ export const Predictor = ({ lang, ipos, isDark }) => {
     setIsDownloading(true);
     
     try {
-      // Create a hidden canvas
-      const canvas = document.createElement('canvas');
-      canvas.width = 1024;
-      canvas.height = 1024;
-      const ctx = canvas.getContext('2d');
-      
-      if (!ctx) throw new Error('Canvas context not available');
+      const canvas = await generateCardCanvas();
+      if (!canvas) throw new Error('Canvas generation failed');
 
-      // 1. Background
-      const gradient = ctx.createRadialGradient(512, 512, 0, 512, 512, 800);
-      gradient.addColorStop(0, '#0f172a'); // slate-900
-      gradient.addColorStop(1, '#020617'); // slate-950
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, 1024, 1024);
-
-      // Subtle glow effect
-      const isHigh = result.probability > 50;
-      const isMedium = result.probability > 20 && result.probability <= 50;
-      const accentColor = isHigh ? '#10b981' : isMedium ? '#facc15' : '#ef4444';
-      
-      ctx.globalAlpha = 0.15;
-      const glowGradient = ctx.createRadialGradient(512, 400, 0, 512, 400, 500);
-      glowGradient.addColorStop(0, accentColor);
-      glowGradient.addColorStop(1, 'transparent');
-      ctx.fillStyle = glowGradient;
-      ctx.fillRect(0, 0, 1024, 1024);
-      ctx.globalAlpha = 1.0;
-
-      // 2. Badge (Result for Company)
-      const badgeText = `RESULT FOR ${result.companyName.toUpperCase()}`;
-      ctx.font = 'bold 18px sans-serif';
-      const badgeWidth = ctx.measureText(badgeText).width + 40;
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
-      ctx.beginPath();
-      ctx.roundRect(512 - badgeWidth / 2, 60, badgeWidth, 40, 20);
-      ctx.fill();
-      ctx.stroke();
-      ctx.fillStyle = '#94a3b8';
-      ctx.textAlign = 'center';
-      ctx.fillText(badgeText, 512, 87);
-
-      // 3. Title
-      ctx.fillStyle = '#94a3b8';
-      ctx.font = 'bold 32px sans-serif';
-      ctx.fillText(lang === 'EN' ? 'Your Allotment Probability' : 'तपाईको बाँडफाँडको सम्भावना', 512, 160);
-
-      // 4. Company Name
-      ctx.fillStyle = accentColor;
-      let fontSize = 70;
-      if (result.companyName.length > 20) fontSize = 50;
-      ctx.font = `900 ${fontSize}px sans-serif`;
-      ctx.fillText(result.companyName.toUpperCase(), 512, 240);
-
-      // 5. Probability Percentage
-      ctx.fillStyle = accentColor;
-      ctx.font = '900 220px sans-serif';
-      ctx.fillText(`${result.probability}%`, 512, 460);
-
-      // 6. Verdict Badge
-      ctx.font = '900 48px sans-serif';
-      ctx.fillText(result.verdict.toUpperCase(), 512, 540);
-
-      // 7. Comment
-      ctx.fillStyle = '#cbd5e1';
-      ctx.font = 'italic 30px sans-serif';
-      const words = result.comment.split(' ');
-      let line = '';
-      let y = 620;
-      const maxWidth = 850;
-      const lineHeight = 40;
-
-      for (let n = 0; n < words.length; n++) {
-        const testLine = line + words[n] + ' ';
-        const metrics = ctx.measureText(testLine);
-        if (metrics.width > maxWidth && n > 0) {
-          ctx.fillText(line, 512, y);
-          line = words[n] + ' ';
-          y += lineHeight;
-        } else {
-          line = testLine;
-        }
-      }
-      ctx.fillText(line, 512, y);
-
-      // 8. Wish Text
-      ctx.fillStyle = '#eab308'; // gold-500
-      ctx.font = '900 24px sans-serif';
-      ctx.fillText(t.wish.toUpperCase(), 512, y + 60);
-
-      // 9. Breakdown Cards
-      const cardY = 820;
-      const cardWidth = 400;
-      const cardHeight = 120;
-      const gap = 40;
-
-      // Card 1: Per Account Odds
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
-      ctx.beginPath();
-      ctx.roundRect(512 - cardWidth - gap / 2, cardY, cardWidth, cardHeight, 24);
-      ctx.fill();
-      ctx.stroke();
-
-      ctx.textAlign = 'center';
-      ctx.fillStyle = '#64748b';
-      ctx.font = 'bold 14px sans-serif';
-      ctx.fillText(result.breakdown[0].label.toUpperCase(), 512 - cardWidth / 2 - gap / 2, cardY + 45);
-      ctx.fillStyle = '#ffffff';
-      ctx.font = '900 32px sans-serif';
-      ctx.fillText(result.breakdown[0].value, 512 - cardWidth / 2 - gap / 2, cardY + 85);
-
-      // Card 2: Total Accounts
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
-      ctx.beginPath();
-      ctx.roundRect(512 + gap / 2, cardY, cardWidth, cardHeight, 24);
-      ctx.fill();
-      ctx.stroke();
-
-      ctx.fillStyle = '#64748b';
-      ctx.font = 'bold 14px sans-serif';
-      ctx.fillText(result.breakdown[1].label.toUpperCase(), 512 + cardWidth / 2 + gap / 2, cardY + 45);
-      ctx.fillStyle = '#ffffff';
-      ctx.font = '900 32px sans-serif';
-      ctx.fillText(result.breakdown[1].value, 512 + cardWidth / 2 + gap / 2, cardY + 85);
-
-      // 10. Branding Footer
-      ctx.fillStyle = '#475569';
-      ctx.font = 'bold 16px sans-serif';
-      ctx.fillText('GENERATED BY IPO PREDICTOR NEPAL', 512, 980);
-
-      // 11. Border
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(20, 20, 984, 984);
-
-      // Convert to image and download
       const dataUrl = canvas.toDataURL('image/png');
       const link = document.createElement('a');
       link.href = dataUrl;
-      link.download = `IPO_Result_${result.companyName.replace(/[^a-zA-Z0-9]/g, '_')}_1024x1024.png`;
+      link.download = `${result.companyName.toLowerCase().replace(/[^a-z0-9]/g, '-')}-ipo-result.png`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -631,35 +617,40 @@ export const Predictor = ({ lang, ipos, isDark }) => {
                   ))}
                 </div>
 
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-6 no-download">
-                  <button 
-                    onClick={handleShare}
-                    disabled={isSharing}
-                    className="btn-gold w-full sm:w-auto px-10 py-5 flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isSharing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Share2 className="w-5 h-5" />}
-                    {isSharing ? (lang === 'EN' ? 'Processing...' : 'प्रक्रिया हुँदैछ...') : t.shareResult}
-                  </button>
-                  <button 
-                    onClick={handleDownload}
-                    disabled={isDownloading}
-                    className={cn(
-                      "w-full sm:w-auto px-10 py-5 rounded-2xl font-bold border transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed",
-                      isDark ? "bg-white/5 border-white/10 hover:bg-white/10 text-white" : "bg-slate-100 border-slate-200 hover:bg-slate-200 text-slate-900"
-                    )}
-                  >
-                    {isDownloading ? (
-                      <>
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                        {lang === 'EN' ? 'Processing...' : 'प्रक्रिया हुँदैछ...'}
-                      </>
-                    ) : (
-                      <>
-                        <Download className="w-5 h-5" />
-                        {t.downloadCard}
-                      </>
-                    )}
-                  </button>
+                <div className="flex flex-col items-center gap-4 pt-6 no-download">
+                  <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full">
+                    <button 
+                      onClick={handleShare}
+                      disabled={isSharing}
+                      className="btn-gold w-full sm:w-auto px-10 py-5 flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isSharing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Share2 className="w-5 h-5" />}
+                      {isSharing ? (lang === 'EN' ? 'Processing...' : 'प्रक्रिया हुँदैछ...') : t.shareResult}
+                    </button>
+                    <button 
+                      onClick={handleDownload}
+                      disabled={isDownloading}
+                      className={cn(
+                        "w-full sm:w-auto px-10 py-5 rounded-2xl font-bold border transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed",
+                        isDark ? "bg-white/5 border-white/10 hover:bg-white/10 text-white" : "bg-slate-100 border-slate-200 hover:bg-slate-200 text-slate-900"
+                      )}
+                    >
+                      {isDownloading ? (
+                        <>
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          {lang === 'EN' ? 'Processing...' : 'प्रक्रिया हुँदैछ...'}
+                        </>
+                      ) : (
+                        <>
+                          <Download className="w-5 h-5" />
+                          {t.downloadCard}
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  <p className="text-xs text-slate-500 font-medium italic">
+                    Don't forget to tag us on Facebook "IPO/ FPO Updates Nepal"
+                  </p>
                 </div>
               </div>
             </div>
