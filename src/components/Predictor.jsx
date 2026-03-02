@@ -273,62 +273,66 @@ export const Predictor = ({ lang, ipos, isDark }) => {
       ctx.fillRect(0, 0, 1024, 1024);
 
       // Subtle glow effect
-      const accentColor = result.probability > 80 ? '#10b981' : result.probability > 50 ? '#10b981' : result.probability > 20 ? '#facc15' : '#ef4444';
+      const isHigh = result.probability > 50;
+      const isMedium = result.probability > 20 && result.probability <= 50;
+      const accentColor = isHigh ? '#10b981' : isMedium ? '#facc15' : '#ef4444';
+      
       ctx.globalAlpha = 0.15;
-      const glowGradient = ctx.createRadialGradient(512, 300, 0, 512, 300, 400);
+      const glowGradient = ctx.createRadialGradient(512, 400, 0, 512, 400, 500);
       glowGradient.addColorStop(0, accentColor);
       glowGradient.addColorStop(1, 'transparent');
       ctx.fillStyle = glowGradient;
       ctx.fillRect(0, 0, 1024, 1024);
       ctx.globalAlpha = 1.0;
 
-      // 2. Branding
-      ctx.fillStyle = '#94a3b8'; // slate-400
-      ctx.font = 'bold 24px sans-serif';
+      // 2. Badge (Result for Company)
+      const badgeText = `RESULT FOR ${result.companyName.toUpperCase()}`;
+      ctx.font = 'bold 18px sans-serif';
+      const badgeWidth = ctx.measureText(badgeText).width + 40;
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+      ctx.beginPath();
+      ctx.roundRect(512 - badgeWidth / 2, 60, badgeWidth, 40, 20);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#94a3b8';
       ctx.textAlign = 'center';
-      ctx.fillText('IPO PREDICTOR NEPAL', 512, 80);
+      ctx.fillText(badgeText, 512, 87);
 
-      // 3. Company Name
-      ctx.fillStyle = '#ffffff';
-      // Dynamic font scaling for company name
-      let fontSize = 80;
-      if (result.companyName.length > 20) fontSize = 60;
-      if (result.companyName.length > 30) fontSize = 45;
-      
-      ctx.font = `black ${fontSize}px sans-serif`;
-      ctx.fillText(result.companyName.toUpperCase(), 512, 220);
-
-      // 4. Probability Title
+      // 3. Title
       ctx.fillStyle = '#94a3b8';
       ctx.font = 'bold 32px sans-serif';
-      ctx.fillText(lang === 'EN' ? 'YOUR ALLOTMENT PROBABILITY' : 'तपाईको बाँडफाँडको सम्भावना', 512, 320);
+      ctx.fillText(lang === 'EN' ? 'Your Allotment Probability' : 'तपाईको बाँडफाँडको सम्भावना', 512, 160);
+
+      // 4. Company Name
+      ctx.fillStyle = accentColor;
+      let fontSize = 70;
+      if (result.companyName.length > 20) fontSize = 50;
+      ctx.font = `900 ${fontSize}px sans-serif`;
+      ctx.fillText(result.companyName.toUpperCase(), 512, 240);
 
       // 5. Probability Percentage
       ctx.fillStyle = accentColor;
-      ctx.font = 'black 240px sans-serif';
-      ctx.fillText(`${result.probability}%`, 512, 540);
+      ctx.font = '900 220px sans-serif';
+      ctx.fillText(`${result.probability}%`, 512, 460);
 
       // 6. Verdict Badge
-      const verdictText = result.verdict.toUpperCase();
-      ctx.font = 'bold 48px sans-serif';
-      ctx.fillStyle = accentColor;
-      ctx.fillText(verdictText, 512, 640);
+      ctx.font = '900 48px sans-serif';
+      ctx.fillText(result.verdict.toUpperCase(), 512, 540);
 
       // 7. Comment
-      ctx.fillStyle = '#cbd5e1'; // slate-300
-      ctx.font = 'italic 32px sans-serif';
-      // Wrap text for comment
+      ctx.fillStyle = '#cbd5e1';
+      ctx.font = 'italic 30px sans-serif';
       const words = result.comment.split(' ');
       let line = '';
-      let y = 740;
-      const maxWidth = 800;
-      const lineHeight = 45;
+      let y = 620;
+      const maxWidth = 850;
+      const lineHeight = 40;
 
       for (let n = 0; n < words.length; n++) {
         const testLine = line + words[n] + ' ';
         const metrics = ctx.measureText(testLine);
-        const testWidth = metrics.width;
-        if (testWidth > maxWidth && n > 0) {
+        if (metrics.width > maxWidth && n > 0) {
           ctx.fillText(line, 512, y);
           line = words[n] + ' ';
           y += lineHeight;
@@ -338,15 +342,57 @@ export const Predictor = ({ lang, ipos, isDark }) => {
       }
       ctx.fillText(line, 512, y);
 
-      // 8. Footer
-      ctx.fillStyle = '#facc15'; // gold-400
-      ctx.font = 'black 36px sans-serif';
-      ctx.fillText('GOOD LUCK! 🍀', 512, 940);
+      // 8. Wish Text
+      ctx.fillStyle = '#eab308'; // gold-500
+      ctx.font = '900 24px sans-serif';
+      ctx.fillText(t.wish.toUpperCase(), 512, y + 60);
 
-      // 9. Border
+      // 9. Breakdown Cards
+      const cardY = 820;
+      const cardWidth = 400;
+      const cardHeight = 120;
+      const gap = 40;
+
+      // Card 1: Per Account Odds
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
-      ctx.lineWidth = 20;
-      ctx.strokeRect(10, 10, 1004, 1004);
+      ctx.beginPath();
+      ctx.roundRect(512 - cardWidth - gap / 2, cardY, cardWidth, cardHeight, 24);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#64748b';
+      ctx.font = 'bold 14px sans-serif';
+      ctx.fillText(result.breakdown[0].label.toUpperCase(), 512 - cardWidth / 2 - gap / 2, cardY + 45);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '900 32px sans-serif';
+      ctx.fillText(result.breakdown[0].value, 512 - cardWidth / 2 - gap / 2, cardY + 85);
+
+      // Card 2: Total Accounts
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+      ctx.beginPath();
+      ctx.roundRect(512 + gap / 2, cardY, cardWidth, cardHeight, 24);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = '#64748b';
+      ctx.font = 'bold 14px sans-serif';
+      ctx.fillText(result.breakdown[1].label.toUpperCase(), 512 + cardWidth / 2 + gap / 2, cardY + 45);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '900 32px sans-serif';
+      ctx.fillText(result.breakdown[1].value, 512 + cardWidth / 2 + gap / 2, cardY + 85);
+
+      // 10. Branding Footer
+      ctx.fillStyle = '#475569';
+      ctx.font = 'bold 16px sans-serif';
+      ctx.fillText('GENERATED BY IPO PREDICTOR NEPAL', 512, 980);
+
+      // 11. Border
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(20, 20, 984, 984);
 
       // Convert to image and download
       const dataUrl = canvas.toDataURL('image/png');
