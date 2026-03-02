@@ -36,15 +36,23 @@ export const AboutSection = ({ lang, isDark }) => {
       });
       
       console.log('[CLIENT] Response status:', response.status);
-      const data = await response.json();
+      const contentType = response.headers.get("content-type");
+      let data;
+      if (contentType && contentType.includes("application/json")) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        throw new Error(`Server returned non-JSON response: ${text.substring(0, 50)}...`);
+      }
+      
       console.log('[CLIENT] Response data:', data);
       
-      if (response.ok) {
+      if (response.ok && data.success) {
         setSendSuccess(true);
         setFormData({ name: '', email: '', message: '' });
         setTimeout(() => setSendSuccess(false), 5000);
       } else {
-        throw new Error(data.message || 'Failed to send message');
+        throw new Error(data.error || 'Failed to send message');
       }
     } catch (err) {
       console.error('Contact form error:', err);

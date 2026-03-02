@@ -2,6 +2,8 @@ import express from "express";
 import { createServer as createViteServer } from "vite";
 import path from "path";
 import { fileURLToPath } from "url";
+import { Resend } from "resend";
+import "dotenv/config";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -11,6 +13,8 @@ async function startServer() {
   const PORT = 3000;
 
   app.use(express.json());
+
+  const resend = new Resend(process.env.RESEND_API_KEY);
 
   // API routes
   app.get("/robots.txt", (req, res) => {
@@ -31,26 +35,45 @@ async function startServer() {
 </urlset>`);
   });
 
-  app.post("/api/contact", (req, res) => {
+  app.post("/api/contact", async (req, res) => {
     console.log(`[SERVER] Received POST request to /api/contact`);
     const { name, email, message } = req.body;
     
     if (!name || !email || !message) {
       console.log(`[SERVER] Missing required fields:`, { name, email, message });
-      return res.status(400).json({ success: false, message: "Missing required fields" });
+      return res.status(400).json({ success: false, error: "Missing required fields" });
+    }
+
+    if (!process.env.RESEND_API_KEY) {
+      console.error("[SERVER] RESEND_API_KEY is not configured");
+      return res.status(500).json({ success: false, error: "Email service not configured" });
     }
     
-    // In a real app, you'd use a service like Resend, SendGrid, or Nodemailer here.
-    // For this demo, we'll log it and return success.
-    // The user can connect this to a real service.
-    console.log(`\n--- NEW CONTACT MESSAGE ---`);
-    console.log(`To: earnrealcashnepal@gmail.com`);
-    console.log(`From: ${name} (${email})`);
-    console.log(`Message: ${message}`);
-    console.log(`---------------------------\n`);
-    
-    // Simulate success
-    res.json({ success: true, message: "Message sent successfully!" });
+    try {
+      const { data, error } = await resend.emails.send({
+        from: 'IPO Predictor Contact <onboarding@resend.dev>',
+        to: 'earnrealcashnepal@gmail.com',
+        subject: 'New Contact Message - IPO Predictor Nepal',
+        html: `
+          <h3>New Contact Message</h3>
+          <p><strong>Name:</strong> ${name}</p>
+          <p><strong>Email:</strong> ${email}</p>
+          <p><strong>Message:</strong></p>
+          <p>${message.replace(/\n/g, '<br>')}</p>
+        `,
+      });
+
+      if (error) {
+        console.error("[SERVER] Resend error:", error);
+        return res.status(400).json({ success: false, error: error.message });
+      }
+
+      console.log("[SERVER] Email sent successfully:", data);
+      res.json({ success: true });
+    } catch (err) {
+      console.error("[SERVER] Unexpected error sending email:", err);
+      res.status(500).json({ success: false, error: "Internal server error" });
+    }
   });
 
   // Vite middleware for development
