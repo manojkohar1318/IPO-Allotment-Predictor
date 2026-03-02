@@ -32,9 +32,9 @@ export const AboutSection = ({ lang, isDark }) => {
       console.log('[CLIENT] Sending message via EmailJS:', formData);
       
       // Direct values as requested (Replace these with your actual EmailJS credentials)
-      const serviceId = 'service_id'; // Replace with your Service ID
-      const templateId = 'template_id'; // Replace with your Template ID
-      const publicKey = 'public_key'; // Replace with your Public Key
+      const serviceId = 'service_y827fdh'; // Replace with your Service ID
+      const templateId = 'template_rx8dbo7'; // Replace with your Template ID
+      const publicKey = 'YpqDVxxDm8WZkaisU'; // Replace with your Public Key
 
       const templateParams = {
         from_name: formData.name,
