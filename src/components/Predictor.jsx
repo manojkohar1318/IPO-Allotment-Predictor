@@ -281,15 +281,17 @@ export const Predictor = ({ lang, ipos, isDark }) => {
     currentY += 20;
 
     // 4. Percentage (MOST IMPORTANT ELEMENT)
-    // Occupies around 25-30% of card height, but controlled
+    // Dynamic scaling: roughly 14% of canvas width (210px)
     ctx.fillStyle = accentColor;
-    const probFontSize = 300;
+    const probFontSize = Math.floor(canvas.width * 0.14); 
     ctx.font = `900 ${probFontSize}px sans-serif`;
-    ctx.fillText(`${result.probability}%`, centerX, currentY + 220);
-    currentY += 280;
+    currentY += 20; // Reduced breathing space from company name
+    ctx.fillText(`${result.probability}%`, centerX, currentY + (probFontSize * 0.75));
+    currentY += probFontSize + 40; // Spacing after percentage
 
     // 5. Chance Label
-    ctx.font = '900 70px sans-serif';
+    const chanceFontSize = 70;
+    ctx.font = `900 ${chanceFontSize}px sans-serif`;
     ctx.fillText(result.verdict.toUpperCase(), centerX, currentY);
     currentY += 80;
 
@@ -455,7 +457,7 @@ export const Predictor = ({ lang, ipos, isDark }) => {
                     <option value="">-- {t.selectCompany} --</option>
                     {ipos.map(ipo => (
                       <option key={ipo.id} value={ipo.id}>
-                        {lang === 'EN' ? ipo.name : ipo.nameNP} ({ipo.type})
+                        {lang === 'EN' ? ipo.name : ipo.nameNP} ({ipo.category})
                       </option>
                     ))}
                   </select>
