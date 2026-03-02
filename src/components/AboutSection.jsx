@@ -28,13 +28,16 @@ export const AboutSection = ({ lang, isDark }) => {
     setError(null);
     
     try {
+      console.log('[CLIENT] Sending message:', formData);
       const response = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       });
       
+      console.log('[CLIENT] Response status:', response.status);
       const data = await response.json();
+      console.log('[CLIENT] Response data:', data);
       
       if (response.ok) {
         setSendSuccess(true);

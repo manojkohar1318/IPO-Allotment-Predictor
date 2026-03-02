@@ -274,9 +274,25 @@ export const Predictor = ({ lang, ipos, isDark }) => {
     
     try {
       // 1. AI Image Generation (Task 4)
+      // Check if user has selected an API key (Required for Veo/Gemini 3.1 Flash Image)
+      if (window.aistudio) {
+        const hasKey = await window.aistudio.hasSelectedApiKey();
+        if (!hasKey) {
+          await window.aistudio.openSelectKey();
+          // After opening, we assume success as per instructions and proceed
+        }
+      }
+
       let apiKey = process.env.GEMINI_API_KEY || import.meta.env.VITE_GEMINI_API_KEY;
+      
+      // If still no key and not in AI Studio environment that injects it, we might need to fail
+      // but usually process.env.API_KEY is injected after selection.
       if (!apiKey || apiKey === "undefined") {
-        throw new Error('Gemini API Key is missing. Please set GEMINI_API_KEY in your environment.');
+        apiKey = process.env.API_KEY; // Try the injected one
+      }
+
+      if (!apiKey || apiKey === "undefined") {
+        throw new Error('Please select an API key from the dialog to generate the AI card.');
       }
 
       const ai = new GoogleGenAI({ apiKey });
