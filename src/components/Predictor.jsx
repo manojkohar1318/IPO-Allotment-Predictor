@@ -22,6 +22,7 @@ import ReactConfetti from 'react-confetti';
 import html2canvas from 'html2canvas';
 import { db, ref, push, set, runTransaction } from '../firebase';
 import { GoogleGenAI } from "@google/genai";
+import { FUNNY_COMMENTS } from '../utils/comments';
 
 export const Predictor = ({ lang, ipos, isDark }) => {
   const [step, setStep] = useState('form');
@@ -100,22 +101,28 @@ export const Predictor = ({ lang, ipos, isDark }) => {
       let color = '';
       let comment = '';
       
+      const getRandomComment = (prob) => {
+        const category = prob > 80 ? 'HIGH' : prob > 50 ? 'GOOD' : prob > 20 ? 'MOD' : 'LOW';
+        const list = FUNNY_COMMENTS[lang][category];
+        return list[Math.floor(Math.random() * list.length)];
+      };
+
       if (totalProb > 80) {
         verdict = lang === 'EN' ? 'Extremely High Chance' : 'अत्यधिक उच्च सम्भावना';
         color = 'text-emerald-400';
-        comment = t.funnyCommentHigh;
+        comment = getRandomComment(totalProb);
       } else if (totalProb > 50) {
         verdict = lang === 'EN' ? 'Good Chance' : 'राम्रो सम्भावना';
         color = 'text-emerald-500';
-        comment = t.funnyCommentGood;
+        comment = getRandomComment(totalProb);
       } else if (totalProb > 20) {
         verdict = lang === 'EN' ? 'Moderate Chance' : 'मध्यम सम्भावना';
         color = 'text-gold-400';
-        comment = t.funnyCommentMod;
+        comment = getRandomComment(totalProb);
       } else {
         verdict = lang === 'EN' ? 'Low Chance' : 'न्यून सम्भावना';
         color = 'text-red-400';
-        comment = t.funnyCommentLow;
+        comment = getRandomComment(totalProb);
       }
 
       setResult({
@@ -267,8 +274,8 @@ export const Predictor = ({ lang, ipos, isDark }) => {
     
     try {
       // 1. AI Image Generation (Task 4)
-      const apiKey = process.env.GEMINI_API_KEY || import.meta.env.VITE_GEMINI_API_KEY;
-      if (!apiKey) {
+      let apiKey = process.env.GEMINI_API_KEY || import.meta.env.VITE_GEMINI_API_KEY;
+      if (!apiKey || apiKey === "undefined") {
         throw new Error('Gemini API Key is missing. Please set GEMINI_API_KEY in your environment.');
       }
 
