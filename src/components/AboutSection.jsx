@@ -32,17 +32,17 @@ export const AboutSection = ({ lang, isDark }) => {
       console.log('[CLIENT] Sending message via EmailJS:', formData);
       
       // Direct values as requested (Replace these with your actual EmailJS credentials)
-      const serviceId = 'service_y827fdh'; // Replace with your Service ID
-      const templateId = 'template_rx8dbo7'; // Replace with your Template ID
-      const publicKey = 'YpqDVxxDm8WZkaisU'; // Replace with your Public Key
+      const serviceId = 'service_id'; // Replace with your Service ID
+      const templateId = 'template_id'; // Replace with your Template ID
+      const publicKey = 'public_key'; // Replace with your Public Key
 
       const templateParams = {
-        from_name: formData.name,
-        from_email: formData.email,
-        message: formData.message,
-        to_email: 'earnrealcashnepal@gmail.com',
-        subject: 'New Contact Message - IPO Predictor Nepal'
+        name: formData.name,
+        email: formData.email,
+        message: formData.message
       };
+
+      console.log('[CLIENT] Template Parameters being sent:', templateParams);
 
       const result = await emailjs.send(
         serviceId,
