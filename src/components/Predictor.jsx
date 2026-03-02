@@ -194,10 +194,11 @@ export const Predictor = ({ lang, ipos, isDark }) => {
     ctx.globalAlpha = 1.0;
 
     // 2. Main Card Container (Glassmorphism style)
-    const cardX = 100;
-    const cardY = 100;
-    const cardWidth = 1300;
-    const cardHeight = 1300;
+    const cardPadding = 100;
+    const cardX = cardPadding;
+    const cardY = cardPadding;
+    const cardWidth = 1500 - (cardPadding * 2);
+    const cardHeight = 1500 - (cardPadding * 2);
     const cardRadius = 60;
 
     // Shadow
@@ -217,24 +218,13 @@ export const Predictor = ({ lang, ipos, isDark }) => {
     ctx.lineWidth = 2;
     ctx.stroke();
 
-    // 3. Content
+    // 3. Content - Dynamic Layout Calculations
     ctx.textAlign = 'center';
-
-    // Badge
-    const badgeText = `PREDICTION RESULT FOR ${result.companyName.toUpperCase()}`;
-    ctx.font = 'bold 24px sans-serif';
-    const badgeWidth = ctx.measureText(badgeText).width + 60;
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
-    ctx.beginPath();
-    ctx.roundRect(750 - badgeWidth / 2, 180, badgeWidth, 60, 30);
-    ctx.fill();
-    ctx.fillStyle = '#94a3b8';
-    ctx.fillText(badgeText, 750, 218);
-
-    // Title
-    ctx.fillStyle = '#94a3b8';
-    ctx.font = 'bold 40px sans-serif';
-    ctx.fillText(lang === 'EN' ? 'Your Allotment Probability' : 'तपाईको बाँडफाँडको सम्भावना', 750, 320);
+    const centerX = 750;
+    const internalPadding = 100;
+    const safeWidth = cardWidth - (internalPadding * 2);
+    
+    let currentY = cardY + internalPadding;
 
     // Helper for wrapping text
     const wrapText = (text, maxWidth, font) => {
@@ -256,51 +246,74 @@ export const Predictor = ({ lang, ipos, isDark }) => {
       return lines;
     };
 
-    // 4. Company Name (Dynamic Wrapping & Scaling)
+    // 1. Small top label: "Prediction Result for [Company]"
+    const badgeText = `PREDICTION RESULT FOR ${result.companyName.toUpperCase()}`;
+    ctx.font = 'bold 22px sans-serif';
+    const badgeWidth = ctx.measureText(badgeText).width + 60;
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+    ctx.beginPath();
+    ctx.roundRect(centerX - badgeWidth / 2, currentY, badgeWidth, 60, 30);
+    ctx.fill();
+    ctx.fillStyle = '#64748b'; // slate-500
+    ctx.fillText(badgeText, centerX, currentY + 38);
+    currentY += 100;
+
+    // 2. Section title: "Your Allotment Probability"
+    ctx.fillStyle = '#94a3b8'; // slate-400
+    ctx.font = 'bold 36px sans-serif';
+    ctx.fillText(lang === 'EN' ? 'Your Allotment Probability' : 'तपाईको बाँडफाँडको सम्भावना', centerX, currentY);
+    currentY += 80;
+
+    // 3. Company Name (Dynamic Wrapping & Scaling)
     ctx.fillStyle = accentColor;
-    let baseFontSize = 100;
-    let companyLines = wrapText(result.companyName.toUpperCase(), 1100, `900 ${baseFontSize}px sans-serif`);
+    let baseFontSize = 90;
+    let companyLines = wrapText(result.companyName.toUpperCase(), safeWidth, `900 ${baseFontSize}px sans-serif`);
     
     if (companyLines.length > 2) {
-      baseFontSize = 80;
-      companyLines = wrapText(result.companyName.toUpperCase(), 1100, `900 ${baseFontSize}px sans-serif`);
+      baseFontSize = 70;
+      companyLines = wrapText(result.companyName.toUpperCase(), safeWidth, `900 ${baseFontSize}px sans-serif`);
     }
     
-    let currentY = 420;
     companyLines.forEach(line => {
-      ctx.fillText(line, 750, currentY);
-      currentY += baseFontSize + 20;
+      ctx.fillText(line, centerX, currentY);
+      currentY += baseFontSize + 15;
     });
+    currentY += 20;
 
-    // 5. Probability Percentage
+    // 4. Percentage (MOST IMPORTANT ELEMENT)
+    // Occupies around 25-30% of card height, but controlled
     ctx.fillStyle = accentColor;
-    ctx.font = '900 350px sans-serif';
-    ctx.fillText(`${result.probability}%`, 750, currentY + 300);
+    const probFontSize = 300;
+    ctx.font = `900 ${probFontSize}px sans-serif`;
+    ctx.fillText(`${result.probability}%`, centerX, currentY + 220);
+    currentY += 280;
 
-    // 6. Verdict Badge
-    ctx.font = '900 80px sans-serif';
-    ctx.fillText(result.verdict.toUpperCase(), 750, currentY + 420);
+    // 5. Chance Label
+    ctx.font = '900 70px sans-serif';
+    ctx.fillText(result.verdict.toUpperCase(), centerX, currentY);
+    currentY += 80;
 
-    // 7. Comment (Wrapped)
-    ctx.fillStyle = '#cbd5e1';
-    ctx.font = 'italic 40px sans-serif';
-    const commentLines = wrapText(result.comment, 1100, 'italic 40px sans-serif');
-    let commentY = currentY + 520;
+    // 6. Motivational Quote (Wrapped)
+    ctx.fillStyle = '#cbd5e1'; // slate-300
+    ctx.font = 'italic 36px sans-serif';
+    const commentLines = wrapText(result.comment, safeWidth, 'italic 36px sans-serif');
     commentLines.forEach(line => {
-      ctx.fillText(line, 750, commentY);
-      commentY += 55;
+      ctx.fillText(line, centerX, currentY);
+      currentY += 50;
     });
+    currentY += 30;
 
-    // 8. Wish Text
-    ctx.fillStyle = '#eab308';
-    ctx.font = '900 36px sans-serif';
-    ctx.fillText(t.wish.toUpperCase(), 750, commentY + 40);
+    // 7. GOOD LUCK
+    ctx.fillStyle = '#eab308'; // gold-500
+    ctx.font = '900 32px sans-serif';
+    ctx.fillText(t.wish.toUpperCase(), centerX, currentY);
+    currentY += 80;
 
-    // 9. Breakdown Cards
-    const bCardY = 1150;
-    const bCardWidth = 550;
-    const bCardHeight = 180;
-    const bGap = 60;
+    // 8. Bottom Stats Boxes
+    const bCardWidth = 500;
+    const bCardHeight = 160;
+    const bGap = 40;
+    const bCardY = cardY + cardHeight - internalPadding - bCardHeight;
 
     const drawBCard = (x, label, value) => {
       ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
@@ -311,20 +324,20 @@ export const Predictor = ({ lang, ipos, isDark }) => {
       ctx.stroke();
 
       ctx.fillStyle = '#64748b';
-      ctx.font = 'bold 24px sans-serif';
-      ctx.fillText(label.toUpperCase(), x + bCardWidth / 2, bCardY + 65);
+      ctx.font = 'bold 22px sans-serif';
+      ctx.fillText(label.toUpperCase(), x + bCardWidth / 2, bCardY + 60);
       ctx.fillStyle = '#ffffff';
-      ctx.font = '900 56px sans-serif';
-      ctx.fillText(value, x + bCardWidth / 2, bCardY + 135);
+      ctx.font = '900 50px sans-serif';
+      ctx.fillText(value, x + bCardWidth / 2, bCardY + 125);
     };
 
-    drawBCard(750 - bCardWidth - bGap / 2, result.breakdown[0].label, result.breakdown[0].value);
-    drawBCard(750 + bGap / 2, result.breakdown[1].label, result.breakdown[1].value);
+    drawBCard(centerX - bCardWidth - bGap / 2, result.breakdown[0].label, result.breakdown[0].value);
+    drawBCard(centerX + bGap / 2, result.breakdown[1].label, result.breakdown[1].value);
 
     // 10. Branding Footer
-    ctx.fillStyle = '#475569';
-    ctx.font = 'bold 24px sans-serif';
-    ctx.fillText('GENERATED BY IPO PREDICTOR NEPAL', 750, 1450);
+    ctx.fillStyle = '#475569'; // slate-600
+    ctx.font = 'bold 22px sans-serif';
+    ctx.fillText('GENERATED BY IPO PREDICTOR NEPAL', centerX, cardY + cardHeight - 40);
 
     return canvas;
   };

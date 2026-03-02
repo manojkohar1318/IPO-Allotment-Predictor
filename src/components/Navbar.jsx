@@ -33,6 +33,17 @@ export const Navbar = ({ lang, setLang, currentPage, setCurrentPage, isDark, set
     { id: 'about', label: t.about, icon: Info },
   ];
 
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isMobileMenuOpen]);
+
   return (
     <nav className={cn(
       "fixed top-0 left-0 right-0 z-50 transition-all duration-300 px-4 py-3",
