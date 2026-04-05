@@ -40,7 +40,7 @@ import {
 } from '../firebase';
 import { FUNNY_COMMENTS } from '../utils/comments';
 
-export const Predictor = ({ lang, ipos, liveIpos = [], isDark, setCurrentPage, setCurrentSlug }) => {
+export const Predictor = ({ lang, ipos, overSubData = [], liveIpos = [], isDark, setCurrentPage, setCurrentSlug }) => {
   const [step, setStep] = useState('form');
   const [loading, setLoading] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
@@ -48,7 +48,7 @@ export const Predictor = ({ lang, ipos, liveIpos = [], isDark, setCurrentPage, s
   const [isAutoFilling, setIsAutoFilling] = useState(false);
   const resultRef = useRef(null);
   
-  // Combine Firebase IPOs with Live CDSC IPOs
+  // Combine Firebase IPOs with Live CDSC IPOs and Oversubscription Data
   const combinedIpos = [
     ...liveIpos.map(ipo => ({
       id: `live-${ipo.id}`,
@@ -60,7 +60,20 @@ export const Predictor = ({ lang, ipos, liveIpos = [], isDark, setCurrentPage, s
       issuedUnits: ipo.issuedUnits,
       isLive: true
     })),
-    ...ipos.filter(ipo => !liveIpos.some(live => live.name.toLowerCase().includes(ipo.name.toLowerCase())))
+    ...overSubData.map(ipo => ({
+      id: `oversub-${ipo.id}`,
+      name: ipo.name,
+      nameNP: ipo.name,
+      category: 'Current Issue',
+      sector: 'Various',
+      oversubscription: ipo.oversubscription,
+      issuedUnits: ipo.issuedUnits,
+      isLive: false
+    })),
+    ...ipos.filter(ipo => 
+      !liveIpos.some(live => live.name.toLowerCase().includes(ipo.name.toLowerCase())) &&
+      !overSubData.some(os => os.name.toLowerCase().includes(ipo.name.toLowerCase()))
+    )
   ];
 
   // Form State
@@ -95,16 +108,17 @@ export const Predictor = ({ lang, ipos, liveIpos = [], isDark, setCurrentPage, s
     if (!selectedIpo) return;
     setIsAutoFilling(true);
     try {
-      let data = [];
+      // Use the already passed overSubData if available
+      let data = overSubData;
       
-      // Try our new robust IPO list API first
-      const liveResponse = await fetchWithTimeout('/api/ipo-list', { timeout: 10000 });
-      console.log("Response from /api/ipo-list (AutoFill):", liveResponse);
-      if (liveResponse.ok) {
-        const result = await liveResponse.json();
-        console.log("Data from /api/ipo-list (AutoFill):", result);
-        if (result.success) {
-          data = result.data;
+      // If prop is empty, try our new robust IPO list API first
+      if (data.length === 0) {
+        const liveResponse = await fetchWithTimeout('/api/ipo-list', { timeout: 10000 });
+        if (liveResponse.ok) {
+          const result = await liveResponse.json();
+          if (result.success) {
+            data = result.data;
+          }
         }
       }
       

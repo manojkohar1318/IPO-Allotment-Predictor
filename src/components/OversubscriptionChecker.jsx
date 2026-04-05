@@ -12,8 +12,8 @@ import {
   OperationType 
 } from '../firebase';
 
-export const OversubscriptionChecker = ({ lang, isDark }) => {
-  const [companies, setCompanies] = useState([]);
+export const OversubscriptionChecker = ({ lang, overSubData = [], isDark }) => {
+  const [companies, setCompanies] = useState(overSubData);
   const [selectedCompany, setSelectedCompany] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
@@ -21,7 +21,14 @@ export const OversubscriptionChecker = ({ lang, isDark }) => {
   const [error, setError] = useState(null);
   const t = TRANSLATIONS[lang];
 
+  useEffect(() => {
+    if (overSubData && overSubData.length > 0) {
+      setCompanies(overSubData);
+    }
+  }, [overSubData]);
+
   const loadData = async () => {
+    if (overSubData && overSubData.length > 0) return;
     setLoading(true);
     setError(null);
     

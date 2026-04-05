@@ -42,6 +42,8 @@ import {
   doc, 
   collection, 
   onSnapshot,
+  setDoc,
+  increment,
   handleFirestoreError,
   OperationType 
 } from './firebase';
@@ -120,14 +122,10 @@ class ErrorBoundary extends React.Component {
 function AppContent() {
   const { lang, setLang, isDark, setIsDark, currentPage, setCurrentPage, currentSlug, setCurrentSlug } = useApp();
   const [ipos, setIpos] = useState(DUMMY_IPOS);
+  const [overSubData, setOverSubData] = useState([]);
   const [liveOversubscription, setLiveOversubscription] = useState([]);
-  const [countdownData, setCountdownData] = useState({
-    company: 'Sarbottam Cement',
-    targetDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString()
-  });
+  const [visitorCount, setVisitorCount] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [timeLeft, setTimeLeft] = useState({ d: 0, h: 0, m: 0, s: 0 });
-  const [isCountdownModalOpen, setIsCountdownModalOpen] = useState(false);
   const t = TRANSLATIONS[lang];
 
   useEffect(() => {
@@ -173,20 +171,47 @@ function AppContent() {
       handleFirestoreError(error, OperationType.LIST, 'ipos');
     });
 
-    const countdownDoc = doc(firestore, 'countdown', 'main');
-    const unsubscribeCountdown = onSnapshot(countdownDoc, (snapshot) => {
-      if (snapshot.exists()) {
-        setCountdownData(snapshot.data());
-      }
+    const overSubCollection = collection(firestore, 'oversubscription');
+    const unsubscribeOverSub = onSnapshot(overSubCollection, (snapshot) => {
+      const list = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setOverSubData(list);
     }, (error) => {
-      handleFirestoreError(error, OperationType.GET, 'countdown/main');
+      handleFirestoreError(error, OperationType.LIST, 'oversubscription');
     });
 
     fetchLiveOversubscription();
 
+    // Visitor Count Logic
+    const visitorDoc = doc(firestore, 'stats', 'visitors');
+    const unsubscribeVisitors = onSnapshot(visitorDoc, (snapshot) => {
+      if (snapshot.exists()) {
+        setVisitorCount(snapshot.data().count || 0);
+      }
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, 'stats/visitors');
+    });
+
+    // Increment visitor count once per session
+    const hasVisited = sessionStorage.getItem('hasVisited');
+    if (!hasVisited) {
+      const incrementVisitor = async () => {
+        try {
+          await setDoc(visitorDoc, { count: increment(1) }, { merge: true });
+          sessionStorage.setItem('hasVisited', 'true');
+        } catch (err) {
+          console.error("Failed to increment visitor count:", err);
+        }
+      };
+      incrementVisitor();
+    }
+
     return () => {
       unsubscribeIpos();
-      unsubscribeCountdown();
+      unsubscribeOverSub();
+      unsubscribeVisitors();
     };
   }, []);
 
@@ -212,47 +237,6 @@ function AppContent() {
       document.body.className = 'bg-slate-50 text-slate-900';
     }
   }, [isDark]);
-
-  // Countdown timer logic
-  useEffect(() => {
-    const calculateTimeLeft = () => {
-      const difference = +new Date(countdownData.targetDate) - +new Date();
-      let timeLeft = { d: 0, h: 0, m: 0, s: 0 };
-
-      if (difference > 0) {
-        timeLeft = {
-          d: Math.floor(difference / (1000 * 60 * 60 * 24)),
-          h: Math.floor((difference / (1000 * 60 * 60)) % 24),
-          m: Math.floor((difference / 1000 / 60) % 60),
-          s: Math.floor((difference / 1000) % 60)
-        };
-      }
-      return timeLeft;
-    };
-
-    const timer = setInterval(() => {
-      const newTimeLeft = calculateTimeLeft();
-      setTimeLeft(newTimeLeft);
-      
-      // Auto-open modal if time is left and it hasn't been closed this session
-      if (newTimeLeft.d + newTimeLeft.h + newTimeLeft.m + newTimeLeft.s > 0) {
-        const hasSeenModal = sessionStorage.getItem('hasSeenCountdownModal');
-        if (!hasSeenModal) {
-          setIsCountdownModalOpen(true);
-        }
-      }
-    }, 1000);
-    
-    const initialTimeLeft = calculateTimeLeft();
-    setTimeLeft(initialTimeLeft);
-    if (initialTimeLeft.d + initialTimeLeft.h + initialTimeLeft.m + initialTimeLeft.s > 0) {
-      const hasSeenModal = sessionStorage.getItem('hasSeenCountdownModal');
-      if (!hasSeenModal) {
-        setIsCountdownModalOpen(true);
-      }
-    }
-    return () => clearInterval(timer);
-  }, [countdownData.targetDate]);
 
   // Scroll to top on page change
   useEffect(() => {
@@ -285,15 +269,15 @@ function AppContent() {
 
   const renderPage = () => {
     switch (currentPage) {
-      case 'predictor': return <Predictor lang={lang} ipos={ipos} liveIpos={liveOversubscription} isDark={isDark} setCurrentPage={setCurrentPage} setCurrentSlug={setCurrentSlug} />;
+      case 'predictor': return <Predictor lang={lang} ipos={ipos} overSubData={overSubData} liveIpos={liveOversubscription} isDark={isDark} setCurrentPage={setCurrentPage} setCurrentSlug={setCurrentSlug} />;
       case 'education': return <EducationSection lang={lang} isDark={isDark} />;
       case 'about': return <AboutSection lang={lang} isDark={isDark} />;
-      case 'admin': return <AdminDashboard lang={lang} ipos={ipos} setIpos={setIpos} countdownData={countdownData} setCountdownData={setCountdownData} isDark={isDark} liveOversubscription={liveOversubscription} />;
+      case 'admin': return <AdminDashboard lang={lang} ipos={ipos} setIpos={setIpos} isDark={isDark} liveOversubscription={liveOversubscription} visitorCount={visitorCount} />;
       case 'privacy': return <PrivacyPolicy lang={lang} isDark={isDark} />;
       case 'terms': return <TermsOfService lang={lang} isDark={isDark} />;
       case 'disclaimer': return <DisclaimerPage lang={lang} isDark={isDark} />;
       case 'contact': return <ContactPage lang={lang} isDark={isDark} />;
-      case 'oversubscription': return <OversubscriptionChecker lang={lang} isDark={isDark} />;
+      case 'oversubscription': return <OversubscriptionChecker lang={lang} overSubData={overSubData} isDark={isDark} />;
       case 'blog': return <BlogListing isDark={isDark} setCurrentPage={setCurrentPage} setCurrentSlug={setCurrentSlug} />;
       case 'blog-post': return <BlogPost isDark={isDark} slug={currentSlug} setCurrentPage={setCurrentPage} setCurrentSlug={setCurrentSlug} />;
       default: return renderHome();
@@ -512,80 +496,6 @@ function AppContent() {
           </motion.div>
         </AnimatePresence>
       </main>
-
-      {/* Countdown Modal */}
-      <AnimatePresence>
-        {isCountdownModalOpen && timeLeft.d + timeLeft.h + timeLeft.m + timeLeft.s > 0 && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => {
-                setIsCountdownModalOpen(false);
-                sessionStorage.setItem('hasSeenCountdownModal', 'true');
-              }}
-              className="absolute inset-0 bg-navy-950/80 backdrop-blur-sm"
-            />
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className={cn(
-                "relative w-full max-w-2xl glass rounded-[3rem] border overflow-hidden shadow-2xl",
-                isDark ? "border-white/10" : "border-slate-200 bg-white"
-              )}
-            >
-              <div className="bg-gradient-to-br from-emerald-600 to-emerald-800 p-10 text-center relative overflow-hidden">
-                <button 
-                  onClick={() => {
-                    setIsCountdownModalOpen(false);
-                    sessionStorage.setItem('hasSeenCountdownModal', 'true');
-                  }}
-                  className="absolute top-6 right-6 p-2 bg-white/10 hover:bg-white/20 rounded-xl transition-all text-white"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-                
-                <div className="absolute top-0 right-0 p-8 opacity-10">
-                  <Clock className="w-32 h-32 text-white" />
-                </div>
-                
-                <h2 className="text-2xl font-bold mb-2 text-white">Next Major IPO Result Countdown</h2>
-                <p className="text-white font-black text-4xl mb-10 uppercase tracking-wider">{countdownData.company}</p>
-                
-                <div className="flex justify-center gap-4 sm:gap-8">
-                  {[
-                    { label: 'Days', value: timeLeft.d },
-                    { label: 'Hours', value: timeLeft.h },
-                    { label: 'Mins', value: timeLeft.m },
-                    { label: 'Secs', value: timeLeft.s },
-                  ].map((item, i) => (
-                    <div key={i} className="flex flex-col items-center">
-                      <div className="w-16 h-16 sm:w-24 sm:h-24 bg-white/10 backdrop-blur-md rounded-3xl flex items-center justify-center text-3xl sm:text-4xl font-black mb-2 text-white border border-white/10">
-                        {String(item.value).padStart(2, '0')}
-                      </div>
-                      <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-white opacity-70">{item.label}</span>
-                    </div>
-                  ))}
-                </div>
-                
-                <p className="mt-10 font-bold text-emerald-100 text-lg">Stay tuned for upcoming IPO results!</p>
-                
-                <button 
-                  onClick={() => {
-                    setIsCountdownModalOpen(false);
-                    sessionStorage.setItem('hasSeenCountdownModal', 'true');
-                  }}
-                  className="mt-8 bg-white text-emerald-700 px-10 py-4 rounded-2xl font-black uppercase tracking-widest hover:scale-105 transition-transform shadow-xl"
-                >
-                  Got It!
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
 
       {/* Floating Buttons */}
       <div className="fixed bottom-8 right-8 flex flex-col gap-4 z-40">

@@ -41,7 +41,7 @@ import {
   OperationType
 } from '../firebase';
 
-export const AdminDashboard = ({ lang, ipos, setIpos, countdownData, setCountdownData, isDark, liveOversubscription = [] }) => {
+export const AdminDashboard = ({ lang, ipos, setIpos, isDark, liveOversubscription = [], visitorCount = 0 }) => {
   const [user, setUser] = useState(null);
   const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -59,6 +59,31 @@ export const AdminDashboard = ({ lang, ipos, setIpos, countdownData, setCountdow
   const [contactMessages, setContactMessages] = useState([]);
   const [liveOverSubData, setLiveOverSubData] = useState(liveOversubscription);
   const [isFetchingLive, setIsFetchingLive] = useState(false);
+
+  const [formData, setFormData] = useState({
+    name: '',
+    nameNP: '',
+    sector: 'Commercial Bank',
+    type: 'IPO',
+    category: 'General Public',
+    issuedUnits: 0,
+    price: 100,
+    openDate: '',
+    closeDate: ''
+  });
+
+  const [overSubFormData, setOverSubFormData] = useState({
+    name: '',
+    issuedUnits: 0,
+    appliedUnits: 0,
+    lastUpdated: new Date().toISOString()
+  });
+
+  const [ipoResultFormData, setIpoResultFormData] = useState({
+    name: '',
+    companyId: '',
+    status: 'result_published'
+  });
 
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
@@ -125,63 +150,6 @@ export const AdminDashboard = ({ lang, ipos, setIpos, countdownData, setCountdow
     } finally {
       setIsFetchingLive(false);
     }
-  };
-
-  const [countdownForm, setCountdownForm] = useState({
-    company: countdownData.company,
-    targetDate: countdownData.targetDate.split('T')[0] + 'T' + countdownData.targetDate.split('T')[1].substring(0, 5)
-  });
-
-  const [formData, setFormData] = useState({
-    name: '',
-    nameNP: '',
-    sector: 'Commercial Bank',
-    type: 'IPO',
-    category: 'General Public',
-    issuedUnits: 0,
-    price: 100,
-    openDate: '',
-    closeDate: ''
-  });
-
-  const [overSubFormData, setOverSubFormData] = useState({
-    name: '',
-    issuedUnits: 0,
-    appliedUnits: 0,
-    lastUpdated: new Date().toISOString()
-  });
-
-  const [ipoResultFormData, setIpoResultFormData] = useState({
-    name: '',
-    companyId: '',
-    status: 'result_published'
-  });
-
-  // Sync countdown form when data changes from Firebase
-  useEffect(() => {
-    if (countdownData) {
-      setCountdownForm({
-        company: countdownData.company,
-        targetDate: countdownData.targetDate.split('T')[0] + 'T' + countdownData.targetDate.split('T')[1].substring(0, 5)
-      });
-    }
-  }, [countdownData]);
-
-  const handleUpdateCountdown = (e) => {
-    e.preventDefault();
-    const newCountdown = {
-      company: countdownForm.company,
-      targetDate: new Date(countdownForm.targetDate).toISOString()
-    };
-    
-    const countdownDoc = doc(firestore, 'countdown', 'main');
-    setDoc(countdownDoc, newCountdown)
-      .then(() => {
-        alert('Countdown updated in Firebase successfully!');
-      })
-      .catch(err => {
-        handleFirestoreError(err, OperationType.WRITE, 'countdown/main');
-      });
   };
 
   const [isFetchingCDSC, setIsFetchingCDSC] = useState(false);
@@ -534,44 +502,44 @@ export const AdminDashboard = ({ lang, ipos, setIpos, countdownData, setCountdow
         </div>
       )}
 
-      {/* Countdown Management */}
-      <div className={cn(
-        "glass rounded-[2.5rem] border p-8 mb-12",
-        isDark ? "border-white/10" : "border-slate-200 bg-white/50"
-      )}>
-        <h2 className={cn("text-2xl font-bold mb-6 flex items-center gap-2", isDark ? "text-white" : "text-slate-900")}>
-          <Clock className="text-emerald-500" /> Manage Home Page Countdown
-        </h2>
-        <form onSubmit={handleUpdateCountdown} className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-slate-500 uppercase">Company Name</label>
-            <input 
-              type="text"
-              value={countdownForm.company}
-              onChange={(e) => setCountdownForm({...countdownForm, company: e.target.value})}
-              className={cn(
-                "w-full border rounded-xl p-4 focus:outline-none focus:ring-2 focus:ring-emerald-500/50",
-                isDark ? "bg-navy-900 border-white/10 text-white" : "bg-white border-slate-200 text-slate-900"
-              )}
-              placeholder="e.g. Sarbottam Cement"
-            />
+      {/* Stats Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+        <div className={cn(
+          "glass p-8 rounded-[2rem] border flex items-center gap-6",
+          isDark ? "border-white/10" : "border-slate-200 bg-white"
+        )}>
+          <div className="w-16 h-16 bg-emerald-500/20 rounded-2xl flex items-center justify-center">
+            <Users className="text-emerald-500 w-8 h-8" />
           </div>
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-slate-500 uppercase">Target Date & Time</label>
-            <input 
-              type="datetime-local"
-              value={countdownForm.targetDate}
-              onChange={(e) => setCountdownForm({...countdownForm, targetDate: e.target.value})}
-              className={cn(
-                "w-full border rounded-xl p-4 focus:outline-none focus:ring-2 focus:ring-emerald-500/50",
-                isDark ? "bg-navy-900 border-white/10 text-white" : "bg-white border-slate-200 text-slate-900"
-              )}
-            />
+          <div>
+            <p className="text-sm font-bold text-slate-500 uppercase tracking-wider">Total Visitors</p>
+            <p className={cn("text-3xl font-black", isDark ? "text-white" : "text-slate-900")}>{visitorCount.toLocaleString()}</p>
           </div>
-          <button type="submit" className="btn-gold py-4 px-8 font-bold">
-            Update Countdown
-          </button>
-        </form>
+        </div>
+        <div className={cn(
+          "glass p-8 rounded-[2rem] border flex items-center gap-6",
+          isDark ? "border-white/10" : "border-slate-200 bg-white"
+        )}>
+          <div className="w-16 h-16 bg-gold-500/20 rounded-2xl flex items-center justify-center">
+            <TrendingUp className="text-gold-500 w-8 h-8" />
+          </div>
+          <div>
+            <p className="text-sm font-bold text-slate-500 uppercase tracking-wider">Active IPOs</p>
+            <p className={cn("text-3xl font-black", isDark ? "text-white" : "text-slate-900")}>{ipos.length}</p>
+          </div>
+        </div>
+        <div className={cn(
+          "glass p-8 rounded-[2rem] border flex items-center gap-6",
+          isDark ? "border-white/10" : "border-slate-200 bg-white"
+        )}>
+          <div className="w-16 h-16 bg-indigo-500/20 rounded-2xl flex items-center justify-center">
+            <Calculator className="text-indigo-500 w-8 h-8" />
+          </div>
+          <div>
+            <p className="text-sm font-bold text-slate-500 uppercase tracking-wider">Live Data Points</p>
+            <p className={cn("text-3xl font-black", isDark ? "text-white" : "text-slate-900")}>{overSubData.length}</p>
+          </div>
+        </div>
       </div>
 
       {/* Live Oversubscription Monitor */}
