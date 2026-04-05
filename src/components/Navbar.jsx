@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -14,26 +16,17 @@ import {
   Facebook,
   Calculator,
   Search,
-  User,
-  LogOut,
-  LogIn
+  User
 } from 'lucide-react';
 import { TRANSLATIONS } from '../constants';
 import { cn } from '../cn';
-import { auth, signOut, onAuthStateChanged } from '../firebase';
+import { useApp } from '../context/AppContext';
 
-export const Navbar = ({ lang, setLang, currentPage, setCurrentPage, isDark, setIsDark }) => {
+export const Navbar = () => {
+  const { lang, setLang, isDark, toggleTheme, toggleLang, currentPage, setCurrentPage } = useApp();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [user, setUser] = useState(null);
   const t = TRANSLATIONS[lang];
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (u) => {
-      setUser(u);
-    });
-    return () => unsubscribe();
-  }, []);
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
@@ -47,15 +40,6 @@ export const Navbar = ({ lang, setLang, currentPage, setCurrentPage, isDark, set
     { id: 'about', label: 'About', icon: Info },
     { id: 'contact', label: 'Contact', icon: Phone },
   ];
-
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      setCurrentPage('home');
-    } catch (err) {
-      console.error('Logout failed:', err);
-    }
-  };
 
   useEffect(() => {
     if (isMobileMenuOpen) {
@@ -120,18 +104,18 @@ export const Navbar = ({ lang, setLang, currentPage, setCurrentPage, isDark, set
         {/* Controls */}
         <div className="flex items-center gap-2">
           <button 
-            onClick={() => setLang(lang === 'EN' ? 'NP' : 'EN')}
+            onClick={toggleLang}
             className={cn(
               "flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold transition-all",
               isDark ? "bg-white/5 hover:bg-white/10 border-white/10" : "bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700"
             )}
           >
             <Globe className="w-3.5 h-3.5" />
-            {lang === 'EN' ? 'NP' : 'EN'}
+            {lang === 'en' ? 'NP' : 'EN'}
           </button>
           
           <button 
-            onClick={() => setIsDark(!isDark)}
+            onClick={toggleTheme}
             className={cn(
               "p-2 rounded-lg border transition-all",
               isDark ? "bg-white/5 hover:bg-white/10 border-white/10" : "bg-slate-100 hover:bg-slate-200 border-slate-200"
@@ -139,28 +123,6 @@ export const Navbar = ({ lang, setLang, currentPage, setCurrentPage, isDark, set
           >
             {isDark ? <Sun className="w-4 h-4 text-gold-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
           </button>
-
-          {user ? (
-            <button 
-              onClick={handleLogout}
-              className={cn(
-                "hidden md:flex items-center gap-2 px-4 py-2 rounded-lg border transition-all font-bold text-xs",
-                isDark ? "bg-red-500/10 border-red-500/20 text-red-500 hover:bg-red-500/20" : "bg-red-50 border-red-100 text-red-600 hover:bg-red-100"
-              )}
-            >
-              <LogOut className="w-4 h-4" /> Sign Out
-            </button>
-          ) : (
-            <button 
-              onClick={() => window.dispatchEvent(new CustomEvent('open-auth-modal'))}
-              className={cn(
-                "hidden md:flex items-center gap-2 px-4 py-2 rounded-lg border transition-all font-bold text-xs",
-                isDark ? "bg-indigo-600/20 border-indigo-500/30 text-indigo-400 hover:bg-indigo-600/30" : "bg-indigo-50 border-indigo-200 text-indigo-600 hover:bg-indigo-100"
-              )}
-            >
-              <LogIn className="w-4 h-4" /> Sign In
-            </button>
-          )}
 
           <button 
             className={cn(

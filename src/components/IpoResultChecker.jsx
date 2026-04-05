@@ -31,6 +31,7 @@ import {
   OperationType 
 } from '../firebase';
 import { cn } from '../cn';
+import { fetchWithTimeout } from '../utils/api';
 
 export const IpoResultChecker = ({ lang, isDark, setCurrentPage }) => {
   const [activeTab, setActiveTab] = useState('single');
@@ -69,7 +70,7 @@ export const IpoResultChecker = ({ lang, isDark, setCurrentPage }) => {
 
   const fetchCompanies = async () => {
     try {
-      const response = await fetch('/api/get-ipo-result-list');
+      const response = await fetchWithTimeout('/api/get-ipo-result-list', { timeout: 10000 });
       const data = await response.json();
       if (data.success) {
         const list = data.data.map(c => ({
@@ -159,10 +160,11 @@ export const IpoResultChecker = ({ lang, isDark, setCurrentPage }) => {
     setError(null);
 
     try {
-      const response = await fetch('/api/check-ipo-result', {
+      const response = await fetchWithTimeout('/api/check-ipo-result', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ companyShareId: selectedCompany, boid })
+        body: JSON.stringify({ companyShareId: selectedCompany, boid }),
+        timeout: 15000
       });
       
       const data = await response.json();
@@ -196,13 +198,14 @@ export const IpoResultChecker = ({ lang, isDark, setCurrentPage }) => {
     setError(null);
 
     try {
-      const response = await fetch('/api/check-bulk-ipo-result', {
+      const response = await fetchWithTimeout('/api/check-bulk-ipo-result', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           companyShareId: selectedCompany, 
           boids: savedBoids.map(b => b.boid) 
-        })
+        }),
+        timeout: 30000
       });
       
       const data = await response.json();

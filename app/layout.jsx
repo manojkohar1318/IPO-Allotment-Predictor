@@ -42,9 +42,13 @@ export const metadata = {
   },
 };
 
+import { AppProvider } from '../src/context/AppContext';
+import { Navbar } from '../src/components/Navbar';
+import { Footer } from '../src/components/Footer';
+
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en">
       <head>
         <meta 
           name="google-site-verification" 
@@ -55,7 +59,13 @@ export default function RootLayout({ children }) {
         <link rel="preconnect" href="https://placehold.co" />
       </head>
       <body className={`${inter.className} bg-navy-950 text-white min-h-screen flex flex-col`}>
-        {children}
+        <AppProvider>
+          <Navbar />
+          <main className="flex-grow">
+            {children}
+          </main>
+          <Footer />
+        </AppProvider>
       </body>
     </html>
   );

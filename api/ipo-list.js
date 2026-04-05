@@ -62,7 +62,7 @@ export default async function handler(req, res) {
         try {
           console.log(`Trying fetch from: ${config.url}`);
           const res = await axios.get(config.url, { 
-            timeout: 10000, 
+            timeout: 2500, 
             headers: config.headers,
             responseType: 'text'
           });

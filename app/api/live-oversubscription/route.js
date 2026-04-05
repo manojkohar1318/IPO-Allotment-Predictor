@@ -28,7 +28,7 @@ export async function GET() {
       for (const config of configs) {
         try {
           const response = await axios.get(config.url, { 
-            timeout: 10000, 
+            timeout: 3000, 
             headers: config.headers,
             responseType: 'text'
           });

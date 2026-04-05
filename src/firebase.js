@@ -44,8 +44,16 @@ export const OperationType = {
 };
 
 export function handleFirestoreError(error, operationType, path) {
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  
+  // Ignore "Disconnecting idle stream" errors as they are normal SDK behavior
+  if (errorMessage.includes('Disconnecting idle stream') || errorMessage.includes('Timed out waiting for new targets')) {
+    console.warn('Firestore Idle Stream: ', errorMessage);
+    return;
+  }
+
   const errInfo = {
-    error: error instanceof Error ? error.message : String(error),
+    error: errorMessage,
     authInfo: {
       userId: auth.currentUser?.uid,
       email: auth.currentUser?.email,

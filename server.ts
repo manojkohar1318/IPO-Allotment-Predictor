@@ -65,7 +65,7 @@ async function startServer() {
         try {
           console.log(`Trying fetch from: ${config.url}`);
           const response = await axios.get(config.url, { 
-            timeout: 10000, 
+            timeout: 4500, 
             headers: config.headers,
             responseType: 'text'
           });

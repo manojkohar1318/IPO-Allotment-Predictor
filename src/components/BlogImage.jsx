@@ -11,6 +11,7 @@ export default function BlogImage({ src, alt, ...props }) {
       {...props}
       src={imgSrc}
       alt={alt}
+      referrerPolicy="no-referrer"
       onError={() => {
         setImgSrc('https://placehold.co/800x300?text=IPO+Nepal');
       }}

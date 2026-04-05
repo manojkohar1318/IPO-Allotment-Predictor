@@ -6,32 +6,28 @@ service cloud.firestore {
     // ===============================================================
     //
     // Collection: ipos
-    // Document ID: auto-generated or custom
-    // Fields: name, symbol, sector, price, units, openingDate, closingDate, status, type, minUnits, maxUnits, issueManager
+    // Document ID: auto-generated
+    // Fields: name, nameNP, sector, type, category, issuedUnits, price, openDate, closeDate
+    //
+    // Collection: oversubscription
+    // Document ID: auto-generated
+    // Fields: name, issuedUnits, appliedUnits, lastUpdated
+    //
+    // Collection: ipo_results_list
+    // Document ID: auto-generated
+    // Fields: name, companyId, status
     //
     // Collection: countdown
     // Document ID: main
-    // Fields: targetDate, title, isActive
+    // Fields: company, targetDate
     //
-    // Collection: users
-    // Document ID: Firebase Auth UID
-    // Fields: email, savedBoids, createdAt, role
-    //
-    // Collection: oversubscription
-    // Document ID: companyId
-    // Fields: name, times, applicants, units, lastUpdated
+    // Collection: contact_messages
+    // Document ID: auto-generated
+    // Fields: name, email, message, createdAt
     //
     // Collection: predictions
     // Document ID: auto-generated
-    // Fields: ipoName, units, chance, userId, timestamp
-    //
-    // Collection: stats
-    // Document ID: auto-generated or custom
-    // Fields: totalPredictions, totalUsers
-    //
-    // Collection: ipo_results_list
-    // Document ID: auto-generated or custom
-    // Fields: name, companyId, status
+    // Fields: ipoName, oversubscription, accounts, probability, timestamp
     //
     // ===============================================================
 
@@ -43,102 +39,94 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
-    }
-
     function isAdmin() {
       return isAuthenticated() && 
-        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' || 
-         (request.auth.token.email == "earnrealcashnepal@gmail.com" && request.auth.token.email_verified == true));
-    }
-
-    function isValidUser(data) {
-      return data.keys().hasAll(['email']) &&
-             data.email is string &&
-             (!('savedBoids' in data) || data.savedBoids is list) &&
-             (!('role' in data) || data.role in ['user', 'admin']);
+        (request.auth.token.email == "manojkohar1318@gmail.com" && request.auth.token.email_verified == true);
     }
 
     function isValidIpo(data) {
-      return data.keys().hasAll(['name', 'symbol', 'price', 'status']) &&
-             data.name is string && data.symbol is string && data.price is number;
+      return data.name is string && data.name.size() > 0 &&
+             data.nameNP is string && data.nameNP.size() > 0 &&
+             data.sector is string &&
+             data.type in ['IPO', 'FPO', 'Rights', 'Debenture'] &&
+             data.category in ['General Public', 'Locals', 'Foreign Employment'] &&
+             data.issuedUnits is number && data.issuedUnits >= 0 &&
+             data.price is number && data.price >= 0 &&
+             data.openDate is string &&
+             data.closeDate is string;
     }
 
-    function isValidCountdown(data) {
-      return data.keys().hasAll(['targetDate', 'title']) &&
-             data.targetDate is string && data.title is string;
-    }
-
-    function isValidOversubscription(data) {
-      return data.keys().hasAll(['name', 'times', 'applicants', 'units']) &&
-             data.name is string && data.times is number && data.applicants is number && data.units is number;
-    }
-
-    function isValidPrediction(data) {
-      return data.keys().hasAll(['ipoName', 'units', 'chance', 'userId', 'timestamp']) &&
-             data.userId == request.auth.uid &&
-             data.ipoName is string &&
-             data.units is number &&
-             data.chance is number;
+    function isValidOverSub(data) {
+      return data.name is string && data.name.size() > 0 &&
+             data.issuedUnits is number && data.issuedUnits >= 0 &&
+             data.appliedUnits is number && data.appliedUnits >= 0 &&
+             data.lastUpdated is string;
     }
 
     function isValidIpoResult(data) {
-      return data.keys().hasAll(['name', 'companyId']) &&
-             data.name is string && data.companyId is string;
+      return data.name is string && data.name.size() > 0 &&
+             data.companyId is string && data.companyId.size() > 0 &&
+             data.status in ['result_published', 'upcoming'];
     }
 
-    function isValidStat(data) {
-      return (!('totalPredictions' in data) || data.totalPredictions is number) &&
-             (!('totalUsers' in data) || data.totalUsers is number);
+    function isValidCountdown(data) {
+      return data.company is string && data.company.size() > 0 &&
+             data.targetDate is string;
+    }
+
+    function isValidContactMessage(data) {
+      return data.name is string && data.name.size() > 0 &&
+             data.email is string && data.email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$") &&
+             data.message is string && data.message.size() > 0 &&
+             data.createdAt is string;
+    }
+
+    function isValidPrediction(data) {
+      return data.ipoName is string &&
+             data.oversubscription is number &&
+             data.accounts is number &&
+             data.probability is number &&
+             data.timestamp is string;
     }
 
     // ===============================================================
     // Rules
     // ===============================================================
 
-    match /ipo_results_list/{ipoId} {
-      allow read: if true;
-      allow write: if isAdmin() && isValidIpoResult(request.resource.data);
-    }
-
-    match /users/{userId} {
-      allow read: if isOwner(userId) || isAdmin();
-      allow create: if isAuthenticated() && isOwner(userId) && isValidUser(request.resource.data) && 
-                      (request.resource.data.role == 'user' || isAdmin());
-      allow update: if (isOwner(userId) || isAdmin()) && isValidUser(request.resource.data) && 
-                      (request.resource.data.role == resource.data.role || isAdmin());
-    }
-
     match /ipos/{ipoId} {
       allow read: if true;
       allow write: if isAdmin() && isValidIpo(request.resource.data);
     }
 
-    match /countdown/{docId} {
+    match /oversubscription/{companyId} {
+      allow read: if true;
+      allow write: if isAdmin() && isValidOverSub(request.resource.data);
+    }
+
+    match /ipo_results_list/{resultId} {
+      allow read: if true;
+      allow write: if isAdmin() && isValidIpoResult(request.resource.data);
+    }
+
+    match /countdown/main {
       allow read: if true;
       allow write: if isAdmin() && isValidCountdown(request.resource.data);
     }
 
-    match /oversubscription/{companyId} {
-      allow read: if true;
-      allow write: if isAdmin() && isValidOversubscription(request.resource.data);
+    match /contact_messages/{messageId} {
+      allow read: if isAdmin();
+      allow create: if isValidContactMessage(request.resource.data);
+      allow delete: if isAdmin();
     }
 
     match /predictions/{predictionId} {
-      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
-      allow create: if isAuthenticated() && isValidPrediction(request.resource.data);
-      allow update, delete: if isAdmin();
+      allow read: if isAdmin();
+      allow create: if isValidPrediction(request.resource.data);
     }
-
+    
     match /stats/{statId} {
       allow read: if true;
-      allow write: if isAdmin() || isAuthenticated(); // Allow users to increment stats if app logic requires
-    }
-
-    // Default deny
-    match /{path=**} {
-      allow read, write: if false;
+      allow write: if true; // Allow stats updates from anyone for now
     }
   }
 }

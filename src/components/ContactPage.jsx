@@ -2,7 +2,6 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import emailjs from '@emailjs/browser';
 import { 
   Mail, 
   MessageCircle, 
@@ -13,6 +12,7 @@ import {
 } from 'lucide-react';
 import { TRANSLATIONS } from '../constants';
 import { cn } from '../cn';
+import { firestore, collection, addDoc } from '../firebase';
 
 export const ContactPage = ({ lang, isDark }) => {
   const t = TRANSLATIONS[lang];
@@ -27,33 +27,18 @@ export const ContactPage = ({ lang, isDark }) => {
     setError(null);
     
     try {
-      // Replace these with your actual EmailJS credentials
-      const serviceId = 'service_id'; 
-      const templateId = 'template_id'; 
-      const publicKey = 'public_key'; 
-
-      const templateParams = {
-        name: formData.name,
-        email: formData.email,
-        message: formData.message
-      };
-
-      const result = await emailjs.send(
-        serviceId,
-        templateId,
-        templateParams,
-        publicKey
-      );
+      const contactCollection = collection(firestore, 'contact_messages');
+      await addDoc(contactCollection, {
+        ...formData,
+        createdAt: new Date().toISOString()
+      });
       
-      if (result.text === 'OK') {
-        setSendSuccess(true);
-        setFormData({ name: '', email: '', message: '' });
-        setTimeout(() => setSendSuccess(false), 5000);
-      } else {
-        throw new Error('Failed to send message');
-      }
+      setSendSuccess(true);
+      setFormData({ name: '', email: '', message: '' });
+      setTimeout(() => setSendSuccess(false), 5000);
     } catch (err) {
-      setError(`Error: ${err.message}. Please try again later.`);
+      console.error('Failed to send message:', err);
+      setError(`Error: Failed to send message. Please try again later.`);
     } finally {
       setIsSending(false);
     }

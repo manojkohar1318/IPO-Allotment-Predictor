@@ -22,33 +22,30 @@ import {
   Search
 } from 'lucide-react';
 import { TRANSLATIONS } from './constants';
-import { Navbar } from './components/Navbar';
 import { Predictor } from './components/Predictor';
 import { EducationSection } from './components/EducationSection';
 import { AboutSection } from './components/AboutSection';
 import { AdminDashboard } from './components/AdminDashboard';
-import { Footer } from './components/Footer';
 import { PrivacyPolicy } from './components/PrivacyPolicy';
 import { TermsOfService } from './components/TermsOfService';
 import { DisclaimerPage } from './components/DisclaimerPage';
 import { ContactPage } from './components/ContactPage';
 import { OversubscriptionChecker } from './components/OversubscriptionChecker';
-import { AuthModal } from './components/AuthModal';
 import { BlogListing } from './components/BlogListing';
 import { BlogPost } from './components/BlogPost';
 import { BlogSection } from './components/BlogSection';
+import { HeroSection } from './components/HeroSection';
 import { cn } from './cn';
 import { DUMMY_IPOS } from './constants';
 import { 
   firestore, 
   doc, 
-  auth, 
-  onAuthStateChanged,
   collection, 
   onSnapshot,
   handleFirestoreError,
   OperationType 
 } from './firebase';
+import { useApp } from './context/AppContext';
 
 
 class ErrorBoundary extends React.Component {
@@ -121,10 +118,7 @@ class ErrorBoundary extends React.Component {
 }
 
 function AppContent() {
-  const [lang, setLang] = useState('EN');
-  const [currentPage, setCurrentPage] = useState('home');
-  const [currentSlug, setCurrentSlug] = useState(null);
-  const [isDark, setIsDark] = useState(true);
+  const { lang, setLang, isDark, setIsDark, currentPage, setCurrentPage, currentSlug, setCurrentSlug } = useApp();
   const [ipos, setIpos] = useState(DUMMY_IPOS);
   const [liveOversubscription, setLiveOversubscription] = useState([]);
   const [countdownData, setCountdownData] = useState({
@@ -133,20 +127,14 @@ function AppContent() {
   });
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [timeLeft, setTimeLeft] = useState({ d: 0, h: 0, m: 0, s: 0 });
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [user, setUser] = useState(null);
+  const [isCountdownModalOpen, setIsCountdownModalOpen] = useState(false);
   const t = TRANSLATIONS[lang];
 
   useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, (u) => {
-      setUser(u);
-    });
-
-    const handleOpenAuth = () => setIsAuthModalOpen(true);
+    const handleOpenAuth = () => {}; // No-op
     window.addEventListener('open-auth-modal', handleOpenAuth);
 
     return () => {
-      unsubscribeAuth();
       window.removeEventListener('open-auth-modal', handleOpenAuth);
     };
   }, []);
@@ -243,10 +231,26 @@ function AppContent() {
     };
 
     const timer = setInterval(() => {
-      setTimeLeft(calculateTimeLeft());
+      const newTimeLeft = calculateTimeLeft();
+      setTimeLeft(newTimeLeft);
+      
+      // Auto-open modal if time is left and it hasn't been closed this session
+      if (newTimeLeft.d + newTimeLeft.h + newTimeLeft.m + newTimeLeft.s > 0) {
+        const hasSeenModal = sessionStorage.getItem('hasSeenCountdownModal');
+        if (!hasSeenModal) {
+          setIsCountdownModalOpen(true);
+        }
+      }
     }, 1000);
     
-    setTimeLeft(calculateTimeLeft());
+    const initialTimeLeft = calculateTimeLeft();
+    setTimeLeft(initialTimeLeft);
+    if (initialTimeLeft.d + initialTimeLeft.h + initialTimeLeft.m + initialTimeLeft.s > 0) {
+      const hasSeenModal = sessionStorage.getItem('hasSeenCountdownModal');
+      if (!hasSeenModal) {
+        setIsCountdownModalOpen(true);
+      }
+    }
     return () => clearInterval(timer);
   }, [countdownData.targetDate]);
 
@@ -298,89 +302,7 @@ function AppContent() {
 
   const renderHome = () => (
     <div className="space-y-24 pb-24">
-      {/* Hero Section */}
-      <section className="relative pt-32 pb-20 px-4 overflow-hidden">
-        {/* Abstract Background Elements */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full -z-10">
-          <div className="absolute top-20 left-10 w-72 h-72 bg-emerald-600/10 blur-[120px] rounded-full" />
-          <div className="absolute bottom-10 right-10 w-96 h-96 bg-gold-500/5 blur-[150px] rounded-full" />
-        </div>
-
-        <div className="max-w-7xl mx-auto text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <h1 className={cn(
-              "text-5xl md:text-7xl font-black mb-6 leading-tight",
-              isDark ? "text-white" : "text-slate-900"
-            )}>
-              NEPSE IPO Allotment Predictor — Check Your IPO Chances
-            </h1>
-            <p className={cn(
-              "text-xl md:text-2xl mb-10 max-w-3xl mx-auto",
-              isDark ? "text-slate-400" : "text-slate-600"
-            )}>
-              Welcome to the ultimate ipo allotment predictor nepal. Our advanced oversubscription checker helps you analyze any nepse ipo using data from mero share to calculate your exact allotment probability instantly.
-            </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <button 
-                onClick={() => setCurrentPage('predictor')}
-                className="btn-gold text-lg px-10 py-5 flex items-center justify-center gap-3 group w-full sm:w-72"
-              >
-                {t.checkChances} <Sparkles className="w-6 h-6 group-hover:scale-110 transition-transform" />
-              </button>
-              <button 
-                onClick={() => setCurrentPage('oversubscription')}
-                className={cn(
-                  "px-10 py-5 rounded-xl font-bold border transition-all flex items-center justify-center gap-3 w-full sm:w-72",
-                  isDark ? "bg-indigo-600/20 border-indigo-500/30 hover:bg-indigo-600/30 text-indigo-400" : "bg-indigo-50 border-indigo-200 hover:bg-indigo-100 text-indigo-600"
-                )}
-              >
-                <Calculator className="w-6 h-6" /> {t.oversubscriptionChecker}
-              </button>
-            </div>
-            <div className="flex justify-center mt-6">
-              <button 
-                onClick={() => setCurrentPage('education')}
-                className={cn(
-                  "px-8 py-3 rounded-xl font-bold border transition-all text-sm",
-                  isDark ? "bg-white/5 border-white/10 hover:bg-white/10 text-white" : "bg-slate-100 border-slate-200 hover:bg-slate-200 text-slate-900"
-                )}
-              >
-                Learn How It Works
-              </button>
-            </div>
-          </motion.div>
-
-          {/* Disclaimer Card */}
-          <div className="mt-24 max-w-4xl mx-auto">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="glass p-10 rounded-[2.5rem] border border-gold-500/20 bg-gold-500/5 relative overflow-hidden group"
-            >
-              <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
-                <AlertTriangle className="w-24 h-24 text-gold-500" />
-              </div>
-              <div className="flex items-center gap-4 mb-6 justify-center">
-                <div className="w-12 h-12 bg-gold-500/20 rounded-2xl flex items-center justify-center">
-                  <AlertTriangle className="text-gold-500 w-6 h-6" />
-                </div>
-                <h3 className="text-2xl font-black text-gold-500 uppercase tracking-widest">Disclaimer</h3>
-              </div>
-              <p className={cn(
-                "text-lg leading-relaxed text-center italic",
-                isDark ? "text-slate-300" : "text-slate-600"
-              )}>
-                "{t.disclaimer}"
-              </p>
-            </motion.div>
-          </div>
-        </div>
-      </section>
+      <HeroSection setCurrentPage={setCurrentPage} />
 
       {/* Oversubscription Section */}
       <section className="max-w-7xl mx-auto px-4">
@@ -514,35 +436,6 @@ function AppContent() {
         </div>
       </section>
 
-      {/* Countdown Widget */}
-      {timeLeft.d + timeLeft.h + timeLeft.m + timeLeft.s > 0 && (
-        <section className="max-w-4xl mx-auto px-4">
-          <div className="bg-gradient-to-br from-emerald-600 to-emerald-800 p-10 rounded-[3rem] text-center shadow-2xl shadow-emerald-900/40 relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-8 opacity-10">
-              <Clock className="w-32 h-32" />
-            </div>
-            <h2 className="text-2xl font-bold mb-2 text-white">Next Major IPO Result Countdown</h2>
-            <p className="text-white font-black text-3xl mb-8 uppercase tracking-wider">{countdownData.company}</p>
-            <div className="flex justify-center gap-4 sm:gap-8">
-              {[
-                { label: 'Days', value: timeLeft.d },
-                { label: 'Hours', value: timeLeft.h },
-                { label: 'Mins', value: timeLeft.m },
-                { label: 'Secs', value: timeLeft.s },
-              ].map((item, i) => (
-                <div key={i} className="flex flex-col items-center">
-                  <div className="w-16 h-16 sm:w-20 sm:h-20 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center text-2xl sm:text-3xl font-black mb-2">
-                    {String(item.value).padStart(2, '0')}
-                  </div>
-                  <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest opacity-70">{item.label}</span>
-                </div>
-              ))}
-            </div>
-            <p className="mt-8 font-bold text-emerald-100">Stay tuned for upcoming IPO results!</p>
-          </div>
-        </section>
-      )}
-
       <BlogSection isDark={isDark} setCurrentPage={setCurrentPage} setCurrentSlug={setCurrentSlug} />
 
       {/* FAQ Section */}
@@ -606,15 +499,6 @@ function AppContent() {
       "min-h-screen flex flex-col transition-colors duration-300",
       isDark ? "bg-navy-950 text-white" : "bg-slate-50 text-slate-900"
     )}>
-      <Navbar 
-        lang={lang} 
-        setLang={setLang} 
-        currentPage={currentPage} 
-        setCurrentPage={setCurrentPage} 
-        isDark={isDark}
-        setIsDark={setIsDark}
-      />
-      
       <main className="flex-grow pt-20">
         <AnimatePresence mode="wait">
           <motion.div
@@ -629,13 +513,79 @@ function AppContent() {
         </AnimatePresence>
       </main>
 
-      <Footer lang={lang} setCurrentPage={setCurrentPage} isDark={isDark} />
-
-      <AuthModal 
-        isOpen={isAuthModalOpen} 
-        onClose={() => setIsAuthModalOpen(false)} 
-        isDark={isDark} 
-      />
+      {/* Countdown Modal */}
+      <AnimatePresence>
+        {isCountdownModalOpen && timeLeft.d + timeLeft.h + timeLeft.m + timeLeft.s > 0 && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => {
+                setIsCountdownModalOpen(false);
+                sessionStorage.setItem('hasSeenCountdownModal', 'true');
+              }}
+              className="absolute inset-0 bg-navy-950/80 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className={cn(
+                "relative w-full max-w-2xl glass rounded-[3rem] border overflow-hidden shadow-2xl",
+                isDark ? "border-white/10" : "border-slate-200 bg-white"
+              )}
+            >
+              <div className="bg-gradient-to-br from-emerald-600 to-emerald-800 p-10 text-center relative overflow-hidden">
+                <button 
+                  onClick={() => {
+                    setIsCountdownModalOpen(false);
+                    sessionStorage.setItem('hasSeenCountdownModal', 'true');
+                  }}
+                  className="absolute top-6 right-6 p-2 bg-white/10 hover:bg-white/20 rounded-xl transition-all text-white"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+                
+                <div className="absolute top-0 right-0 p-8 opacity-10">
+                  <Clock className="w-32 h-32 text-white" />
+                </div>
+                
+                <h2 className="text-2xl font-bold mb-2 text-white">Next Major IPO Result Countdown</h2>
+                <p className="text-white font-black text-4xl mb-10 uppercase tracking-wider">{countdownData.company}</p>
+                
+                <div className="flex justify-center gap-4 sm:gap-8">
+                  {[
+                    { label: 'Days', value: timeLeft.d },
+                    { label: 'Hours', value: timeLeft.h },
+                    { label: 'Mins', value: timeLeft.m },
+                    { label: 'Secs', value: timeLeft.s },
+                  ].map((item, i) => (
+                    <div key={i} className="flex flex-col items-center">
+                      <div className="w-16 h-16 sm:w-24 sm:h-24 bg-white/10 backdrop-blur-md rounded-3xl flex items-center justify-center text-3xl sm:text-4xl font-black mb-2 text-white border border-white/10">
+                        {String(item.value).padStart(2, '0')}
+                      </div>
+                      <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-white opacity-70">{item.label}</span>
+                    </div>
+                  ))}
+                </div>
+                
+                <p className="mt-10 font-bold text-emerald-100 text-lg">Stay tuned for upcoming IPO results!</p>
+                
+                <button 
+                  onClick={() => {
+                    setIsCountdownModalOpen(false);
+                    sessionStorage.setItem('hasSeenCountdownModal', 'true');
+                  }}
+                  className="mt-8 bg-white text-emerald-700 px-10 py-4 rounded-2xl font-black uppercase tracking-widest hover:scale-105 transition-transform shadow-xl"
+                >
+                  Got It!
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Floating Buttons */}
       <div className="fixed bottom-8 right-8 flex flex-col gap-4 z-40">

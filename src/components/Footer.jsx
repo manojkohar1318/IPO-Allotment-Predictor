@@ -1,3 +1,5 @@
+"use client";
+
 import React from 'react';
 import { 
   TrendingUp, 
@@ -10,8 +12,10 @@ import {
 } from 'lucide-react';
 import { TRANSLATIONS } from '../constants';
 import { cn } from '../cn';
+import { useApp } from '../context/AppContext';
 
-export const Footer = ({ lang, setCurrentPage, isDark }) => {
+export const Footer = () => {
+  const { lang, isDark, setCurrentPage } = useApp();
   const t = TRANSLATIONS[lang];
 
   return (

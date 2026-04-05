@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Calculator, Clock, RefreshCw, CheckCircle2, AlertCircle } from 'lucide-react';
 import { TRANSLATIONS } from '../constants';
 import { cn } from '../cn';
+import { fetchWithTimeout } from '../utils/api';
 import { 
   firestore, 
   collection, 
@@ -26,7 +27,7 @@ export const OversubscriptionChecker = ({ lang, isDark }) => {
     
     try {
       // Fetch live data from CDSC scraper first
-      const liveResponse = await fetch('/api/ipo-list');
+      const liveResponse = await fetchWithTimeout('/api/ipo-list', { timeout: 10000 });
       console.log("Response from /api/ipo-list (Checker):", liveResponse);
       if (liveResponse.ok) {
         const result = await liveResponse.json();
@@ -70,7 +71,7 @@ export const OversubscriptionChecker = ({ lang, isDark }) => {
   const fetchFromAPI = async () => {
     try {
       // Try our internal oversubscription API
-      const response = await fetch('/api/ipo-oversubscription');
+      const response = await fetchWithTimeout('/api/ipo-oversubscription', { timeout: 8000 });
       if (response.ok) {
         const data = await response.json();
         setCompanies(data);
@@ -109,15 +110,12 @@ export const OversubscriptionChecker = ({ lang, isDark }) => {
   const showDropdown = !selectedCompany && (searchTerm || companies.length > 0);
 
   return (
-    <div className={cn(
-      "min-h-screen transition-colors duration-300",
-      isDark ? "bg-gray-900" : "bg-gray-50"
-    )}>
+    <div className="min-h-screen transition-colors duration-300 bg-gray-50 dark:bg-gray-900">
       <div className="max-w-5xl mx-auto px-4 py-8 md:py-12">
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white dark:bg-navy-900 rounded-[2rem] md:rounded-[3rem] shadow-2xl overflow-hidden border border-slate-200 dark:border-navy-800"
+        className="bg-white dark:bg-gray-800 rounded-[2rem] md:rounded-[3rem] shadow-2xl overflow-hidden border border-gray-200 dark:border-gray-600"
       >
         <div className="p-6 md:p-16">
             <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-8 md:mb-12">
@@ -127,25 +125,22 @@ export const OversubscriptionChecker = ({ lang, isDark }) => {
               </div>
               <div>
                 <div className="flex items-center gap-2 md:gap-3 mb-1">
-                  <h2 className="text-xl md:text-4xl font-black text-slate-900 dark:text-gray-100 uppercase tracking-tight">
+                  <h2 className="text-xl md:text-4xl font-black text-gray-900 dark:text-white uppercase tracking-tight">
                     {t.oversubscriptionChecker}
                   </h2>
                   <div className="flex items-center gap-1 px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
                     <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-                    <span className="text-[8px] md:text-[10px] font-black text-white uppercase tracking-widest">Live</span>
+                    <span className="text-[8px] md:text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">Live</span>
                   </div>
                 </div>
-                <p className="text-xs md:text-base text-slate-500 dark:text-gray-300 font-medium">
+                <p className="text-xs md:text-base text-gray-600 dark:text-gray-300 font-medium">
                   Real-time data synced from CDSC Nepal
                 </p>
               </div>
             </div>
             <button 
               onClick={handleRefresh}
-              className={cn(
-                "w-full md:w-auto px-4 md:px-6 py-2 md:py-3 rounded-xl md:rounded-2xl transition-all flex items-center justify-center gap-2 font-bold text-xs md:text-sm shadow-sm",
-                isDark ? "bg-gray-700 hover:bg-gray-600 text-black-200 border border-gray-600" : "bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300"
-              )}
+              className="w-full md:w-auto px-4 md:px-6 py-2 md:py-3 rounded-xl md:rounded-2xl transition-all flex items-center justify-center gap-2 font-bold text-xs md:text-sm shadow-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-600"
               title="Refresh Data"
             >
               <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
@@ -156,15 +151,12 @@ export const OversubscriptionChecker = ({ lang, isDark }) => {
           <div className="space-y-6 md:space-y-10">
             {/* IPO Selection Dropdown */}
             <div className="space-y-3 md:space-y-4">
-              <label className={cn("block text-[10px] md:text-xs font-black uppercase tracking-[0.2em] ml-2", isDark ? "text-black-200" : "text-black-700")}>
+              <label className="block text-[10px] md:text-xs font-black uppercase tracking-[0.2em] ml-2 text-gray-500 dark:text-gray-400">
                 {t.selectCompany || 'Select IPO'}
               </label>
               <div className="relative group">
                 <select
-                  className={cn(
-                    "w-full px-4 md:px-8 py-4 md:py-6 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-2xl md:rounded-[2rem] focus:border-emerald-500 outline-none transition-all text-sm md:text-xl font-bold appearance-none cursor-pointer shadow-inner",
-                    isDark ? "text-gray-100" : "text-gray-800"
-                  )}
+                  className="w-full px-4 md:px-8 py-4 md:py-6 bg-white dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-2xl md:rounded-[2rem] focus:border-emerald-500 outline-none transition-all text-sm md:text-xl font-bold appearance-none cursor-pointer shadow-inner text-gray-900 dark:text-white"
                   value={selectedCompany?.id || ''}
                   onChange={(e) => {
                     const company = companies.find(c => c.id === e.target.value);
@@ -173,14 +165,14 @@ export const OversubscriptionChecker = ({ lang, isDark }) => {
                   }}
                   disabled={loading}
                 >
-                  <option value="" disabled className="bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100">{loading ? "Loading IPO data..." : "-- Select Active IPO --"}</option>
+                  <option value="" disabled className="bg-white dark:bg-gray-700 text-gray-900 dark:text-white">{loading ? "Loading IPO data..." : "-- Select Active IPO --"}</option>
                   {companies.map((company) => (
-                    <option key={company.id} value={company.id} className="bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100">
+                    <option key={company.id} value={company.id} className="bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
                       {company.name}
                     </option>
                   ))}
                 </select>
-                <div className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 group-focus-within:text-emerald-500 transition-colors">
+                <div className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500 dark:text-gray-400 group-focus-within:text-emerald-500 transition-colors">
                   <Search size={18} className="md:w-6 md:h-6" />
                 </div>
               </div>
@@ -196,7 +188,7 @@ export const OversubscriptionChecker = ({ lang, isDark }) => {
             <button
               onClick={handleCheck}
               disabled={!selectedCompany || loading}
-              className="w-full py-4 md:py-6 bg-emerald-500 hover:bg-emerald-600 disabled:bg-slate-300 dark:disabled:bg-gray-800 text-white font-black text-sm md:text-xl uppercase tracking-[0.15em] rounded-2xl md:rounded-[2rem] transition-all shadow-xl shadow-emerald-900/20 flex items-center justify-center gap-3 active:scale-[0.98]"
+              className="w-full py-4 md:py-6 bg-emerald-500 hover:bg-emerald-600 disabled:bg-gray-300 dark:disabled:bg-gray-800 text-white font-black text-sm md:text-xl uppercase tracking-[0.15em] rounded-2xl md:rounded-[2rem] transition-all shadow-xl shadow-emerald-900/20 flex items-center justify-center gap-3 active:scale-[0.98]"
             >
               {loading ? <RefreshCw className="animate-spin" /> : <Calculator size={20} className="md:w-6 md:h-6" />}
               {t.checkOversubscription}
@@ -216,7 +208,7 @@ export const OversubscriptionChecker = ({ lang, isDark }) => {
                   initial={{ opacity: 0, y: 30, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
-                  className="mt-8 md:mt-16 p-6 md:p-16 bg-white dark:bg-gray-900 rounded-[2.5rem] md:rounded-[4rem] border border-gray-300 dark:border-gray-600 relative overflow-hidden shadow-2xl text-gray-800 dark:text-gray-100"
+                  className="mt-8 md:mt-16 p-6 md:p-16 bg-white dark:bg-gray-800 rounded-[2.5rem] md:rounded-[4rem] border border-gray-200 dark:border-gray-600 relative overflow-hidden shadow-2xl text-gray-900 dark:text-white"
                 >
                   {/* Decorative background element */}
                   <div className={cn(
@@ -225,10 +217,10 @@ export const OversubscriptionChecker = ({ lang, isDark }) => {
                   )} />
 
                   <div className="text-center mb-8 md:mb-12 relative z-10">
-                    <h3 className={cn("text-xl md:text-5xl font-black mb-2 md:mb-4", isDark ? "text-gray-100" : "text-gray-800")}>
+                    <h3 className="text-xl md:text-5xl font-black mb-2 md:mb-4 text-gray-900 dark:text-white">
                       {selectedCompany?.name}
                     </h3>
-                    <p className={cn("text-[10px] md:text-sm uppercase tracking-[0.2em] md:tracking-[0.3em] font-black mb-6 md:mb-10", isDark ? "text-gray-300" : "text-gray-600")}>
+                    <p className="text-[10px] md:text-sm uppercase tracking-[0.2em] md:tracking-[0.3em] font-black mb-6 md:mb-10 text-gray-500 dark:text-gray-400">
                       Oversubscription Analysis
                     </p>
                     
@@ -253,23 +245,17 @@ export const OversubscriptionChecker = ({ lang, isDark }) => {
 
                   {/* Stats Grid */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 relative z-10">
-                    <div className={cn(
-                      "p-4 md:p-8 rounded-2xl md:rounded-[2.5rem] border transition-all hover:scale-[1.02]",
-                      isDark ? "bg-gray-800 border-gray-700" : "bg-white border-slate-100 shadow-sm"
-                    )}>
-                      <p className={cn("text-[8px] md:text-[10px] uppercase font-black tracking-widest mb-1 md:mb-3", isDark ? "text-gray-200" : "text-gray-700")}>Total Issued Units</p>
-                      <p className="text-lg md:text-3xl font-black text-gray-800 dark:text-gray-100">{result.issued}</p>
+                    <div className="p-4 md:p-8 rounded-2xl md:rounded-[2.5rem] border transition-all hover:scale-[1.02] bg-gray-100 dark:bg-gray-700 border-gray-200 dark:border-gray-600 shadow-sm">
+                      <p className="text-[8px] md:text-[10px] uppercase font-black tracking-widest mb-1 md:mb-3 text-gray-500 dark:text-gray-400">Total Issued Units</p>
+                      <p className="text-lg md:text-3xl font-black text-gray-900 dark:text-white">{result.issued}</p>
                     </div>
-                    <div className={cn(
-                      "p-4 md:p-8 rounded-2xl md:rounded-[2.5rem] border transition-all hover:scale-[1.02]",
-                      isDark ? "bg-gray-800 border-gray-700" : "bg-white border-slate-100 shadow-sm"
-                    )}>
-                      <p className={cn("text-[8px] md:text-[10px] uppercase font-black tracking-widest mb-1 md:mb-3", isDark ? "text-gray-200" : "text-gray-700")}>Total Applied Units</p>
-                      <p className="text-lg md:text-3xl font-black text-gray-800 dark:text-gray-100">{result.applied}</p>
+                    <div className="p-4 md:p-8 rounded-2xl md:rounded-[2.5rem] border transition-all hover:scale-[1.02] bg-gray-100 dark:bg-gray-700 border-gray-200 dark:border-gray-600 shadow-sm">
+                      <p className="text-[8px] md:text-[10px] uppercase font-black tracking-widest mb-1 md:mb-3 text-gray-500 dark:text-gray-400">Total Applied Units</p>
+                      <p className="text-lg md:text-3xl font-black text-gray-900 dark:text-white">{result.applied}</p>
                     </div>
                   </div>
 
-                  <div className="mt-8 md:mt-12 flex items-center justify-center gap-2 md:gap-3 text-slate-500 dark:text-gray-400 text-[10px] md:text-xs font-bold uppercase tracking-widest">
+                  <div className="mt-8 md:mt-12 flex items-center justify-center gap-2 md:gap-3 text-gray-500 dark:text-gray-400 text-[10px] md:text-xs font-bold uppercase tracking-widest">
                     <Clock size={14} className="md:w-4 md:h-4" />
                     <span>{t.lastUpdated}: {result.lastUpdated}</span>
                   </div>

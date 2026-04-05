@@ -1,0 +1,87 @@
+{
+  "entities": {
+    "ipo": {
+      "title": "IPO",
+      "description": "Information about an Initial Public Offering.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Company name in English." },
+        "nameNP": { "type": "string", "description": "Company name in Nepali." },
+        "sector": { "type": "string", "description": "Business sector (e.g., Hydropower)." },
+        "type": { "type": "string", "enum": ["IPO", "FPO", "Rights", "Debenture"] },
+        "category": { "type": "string", "enum": ["General Public", "Locals", "Foreign Employment"] },
+        "issuedUnits": { "type": "number", "description": "Number of units being issued." },
+        "price": { "type": "number", "description": "Price per unit in NPR." },
+        "openDate": { "type": "string", "format": "date", "description": "Opening date of the issue." },
+        "closeDate": { "type": "string", "format": "date", "description": "Closing date of the issue." }
+      },
+      "required": ["name", "nameNP", "sector", "type", "category", "issuedUnits", "price", "openDate", "closeDate"]
+    },
+    "oversubscription": {
+      "title": "Oversubscription",
+      "description": "Live or manual oversubscription data for a company.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Company name." },
+        "issuedUnits": { "type": "number", "description": "Total units issued." },
+        "appliedUnits": { "type": "number", "description": "Total units applied for." },
+        "lastUpdated": { "type": "string", "format": "date-time", "description": "Timestamp of last update." }
+      },
+      "required": ["name", "issuedUnits", "appliedUnits", "lastUpdated"]
+    },
+    "ipo_result": {
+      "title": "IPO Result",
+      "description": "Information about a published IPO result.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Company name." },
+        "companyId": { "type": "string", "description": "Unique ID from CDSC for result checking." },
+        "status": { "type": "string", "enum": ["result_published", "upcoming"] }
+      },
+      "required": ["name", "companyId", "status"]
+    },
+    "countdown": {
+      "title": "Countdown",
+      "description": "Configuration for the homepage countdown timer.",
+      "type": "object",
+      "properties": {
+        "company": { "type": "string", "description": "Name of the company for the countdown." },
+        "targetDate": { "type": "string", "format": "date-time", "description": "Target date and time for the countdown." }
+      },
+      "required": ["company", "targetDate"]
+    },
+    "contact_message": {
+      "title": "Contact Message",
+      "description": "Message sent by a user via the contact form.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "message": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "email", "message", "createdAt"]
+    },
+    "prediction": {
+      "title": "Prediction",
+      "description": "A record of an IPO allotment prediction made by a user.",
+      "type": "object",
+      "properties": {
+        "ipoName": { "type": "string" },
+        "oversubscription": { "type": "number" },
+        "accounts": { "type": "number" },
+        "probability": { "type": "number" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["ipoName", "oversubscription", "accounts", "probability", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/ipos/{ipoId}": { "schema": "ipo", "description": "List of active and upcoming IPOs." },
+    "/oversubscription/{companyId}": { "schema": "oversubscription", "description": "Oversubscription data for various companies." },
+    "/ipo_results_list/{resultId}": { "schema": "ipo_result", "description": "List of companies with published results." },
+    "/countdown/main": { "schema": "countdown", "description": "Main countdown timer configuration." },
+    "/contact_messages/{messageId}": { "schema": "contact_message", "description": "User contact messages." },
+    "/predictions/{predictionId}": { "schema": "prediction", "description": "Logs of user predictions for analytics." }
+  }
+}

@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -19,6 +21,7 @@ import {
 import { ARTICLES } from '../lib/articles';
 import { TRANSLATIONS } from '../constants';
 import { cn } from '../cn';
+import { fetchWithTimeout } from '../utils/api';
 import ReactConfetti from 'react-confetti';
 import html2canvas from 'html2canvas';
 import { 
@@ -95,7 +98,7 @@ export const Predictor = ({ lang, ipos, liveIpos = [], isDark, setCurrentPage, s
       let data = [];
       
       // Try our new robust IPO list API first
-      const liveResponse = await fetch('/api/ipo-list');
+      const liveResponse = await fetchWithTimeout('/api/ipo-list', { timeout: 10000 });
       console.log("Response from /api/ipo-list (AutoFill):", liveResponse);
       if (liveResponse.ok) {
         const result = await liveResponse.json();

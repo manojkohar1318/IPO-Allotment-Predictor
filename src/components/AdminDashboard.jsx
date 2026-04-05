@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -14,11 +16,18 @@ import {
   RefreshCw,
   Loader2,
   TrendingUp,
-  Sparkles
+  Sparkles,
+  Mail
 } from 'lucide-react';
 import { SECTORS, DUMMY_IPOS } from '../constants';
 import { cn } from '../cn';
+import { fetchWithTimeout } from '../utils/api';
 import { 
+  auth,
+  googleProvider,
+  signInWithPopup,
+  signOut,
+  onAuthStateChanged,
   firestore, 
   collection, 
   doc, 
@@ -29,10 +38,12 @@ import {
   onSnapshot, 
   serverTimestamp,
   handleFirestoreError,
-  OperationType 
+  OperationType
 } from '../firebase';
 
 export const AdminDashboard = ({ lang, ipos, setIpos, countdownData, setCountdownData, isDark, liveOversubscription = [] }) => {
+  const [user, setUser] = useState(null);
+  const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isOverSubModalOpen, setIsOverSubModalOpen] = useState(false);
   const [isIpoResultModalOpen, setIsIpoResultModalOpen] = useState(false);
@@ -45,10 +56,16 @@ export const AdminDashboard = ({ lang, ipos, setIpos, countdownData, setCountdow
   const [error, setError] = useState(null);
   const [overSubData, setOverSubData] = useState([]);
   const [ipoResultsListData, setIpoResultsListData] = useState([]);
+  const [contactMessages, setContactMessages] = useState([]);
   const [liveOverSubData, setLiveOverSubData] = useState(liveOversubscription);
   const [isFetchingLive, setIsFetchingLive] = useState(false);
 
   useEffect(() => {
+    const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setIsAuthChecking(false);
+    });
+
     const overSubCollection = collection(firestore, 'oversubscription');
     const unsubscribeOverSub = onSnapshot(overSubCollection, (snapshot) => {
       const list = snapshot.docs.map(doc => ({
@@ -71,17 +88,30 @@ export const AdminDashboard = ({ lang, ipos, setIpos, countdownData, setCountdow
       handleFirestoreError(error, OperationType.LIST, 'ipo_results_list');
     });
 
+    const contactCollection = collection(firestore, 'contact_messages');
+    const unsubscribeContact = onSnapshot(contactCollection, (snapshot) => {
+      const list = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      setContactMessages(list);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'contact_messages');
+    });
+
     fetchLiveOversubscription();
     return () => {
+      unsubscribeAuth();
       unsubscribeOverSub();
       unsubscribeIpoResults();
+      unsubscribeContact();
     };
   }, []);
 
   const fetchLiveOversubscription = async () => {
     setIsFetchingLive(true);
     try {
-      const response = await fetch('/api/ipo-list');
+      const response = await fetchWithTimeout('/api/ipo-list', { timeout: 10000 });
       console.log("Response from /api/ipo-list (Admin):", response);
       if (response.ok) {
         const result = await response.json();
@@ -399,6 +429,59 @@ export const AdminDashboard = ({ lang, ipos, setIpos, countdownData, setCountdow
     item.companyId.toLowerCase().includes(ipoResultSearchQuery.toLowerCase())
   );
 
+  const handleLogin = async () => {
+    try {
+      await signInWithPopup(auth, googleProvider);
+    } catch (error) {
+      console.error("Login failed:", error);
+      setError("Login failed. Please try again.");
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
+
+  if (isAuthChecking) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
+      </div>
+    );
+  }
+
+  if (!user || user.email !== "manojkohar1318@gmail.com") {
+    return (
+      <div className="max-w-md mx-auto px-4 py-20 text-center">
+        <div className={cn(
+          "glass rounded-[2.5rem] border p-12",
+          isDark ? "border-white/10" : "border-slate-200 bg-white/50"
+        )}>
+          <Database className="w-16 h-16 mx-auto mb-6 text-emerald-500" />
+          <h1 className={cn("text-3xl font-black mb-4", isDark ? "text-white" : "text-slate-900")}>Admin Access</h1>
+          <p className={cn("mb-8", isDark ? "text-slate-400" : "text-slate-500")}>
+            Please sign in with the authorized administrator account to manage the dashboard.
+          </p>
+          <button 
+            onClick={handleLogin}
+            className="btn-gold w-full py-4 px-8 font-bold flex items-center justify-center gap-3"
+          >
+            <TrendingUp className="w-5 h-5" /> Sign in with Google
+          </button>
+          {user && user.email !== "manojkohar1318@gmail.com" && (
+            <p className="text-red-500 mt-4 text-sm font-bold">
+              Access Denied: {user.email} is not authorized.
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-12">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
@@ -406,7 +489,15 @@ export const AdminDashboard = ({ lang, ipos, setIpos, countdownData, setCountdow
           <h1 className={cn("text-4xl font-black mb-2 flex items-center gap-3", isDark ? "text-white" : "text-slate-900")}>
             <Database className="text-emerald-500" /> Admin Panel
           </h1>
-          <p className={isDark ? "text-slate-400" : "text-slate-500"}>Manage IPO data and site content (Synced with Firebase).</p>
+          <div className="flex items-center gap-4">
+            <p className={isDark ? "text-slate-400" : "text-slate-500"}>Logged in as: <span className="font-bold text-emerald-500">{user.email}</span></p>
+            <button 
+              onClick={handleLogout}
+              className="text-xs font-bold text-red-500 hover:underline"
+            >
+              Sign Out
+            </button>
+          </div>
         </div>
         <div className="flex flex-wrap gap-4">
           <button 
@@ -917,6 +1008,61 @@ export const AdminDashboard = ({ lang, ipos, setIpos, countdownData, setCountdow
           </div>
         )}
       </AnimatePresence>
+
+      {/* Contact Messages */}
+      <div className={cn(
+        "glass rounded-[2.5rem] border p-8 mb-12",
+        isDark ? "border-white/10" : "border-slate-200 bg-white/50"
+      )}>
+        <h2 className={cn("text-2xl font-bold mb-6 flex items-center gap-2", isDark ? "text-white" : "text-slate-900")}>
+          <Mail className="text-emerald-500" /> Contact Messages
+        </h2>
+        
+        {contactMessages.length > 0 ? (
+          <div className="space-y-4">
+            {contactMessages.map((msg) => (
+              <div key={msg.id} className={cn(
+                "p-6 rounded-2xl border transition-all",
+                isDark ? "bg-navy-900/50 border-white/10" : "bg-white border-slate-200 shadow-sm"
+              )}>
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <h3 className={cn("font-bold text-lg", isDark ? "text-white" : "text-slate-900")}>{msg.name}</h3>
+                    <p className="text-sm text-emerald-500 font-medium">{msg.email}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">
+                      {new Date(msg.createdAt).toLocaleDateString()}
+                    </p>
+                    <button 
+                      onClick={async () => {
+                        if (window.confirm('Delete this message?')) {
+                          try {
+                            await deleteDoc(doc(firestore, 'contact_messages', msg.id));
+                          } catch (err) {
+                            handleFirestoreError(err, OperationType.DELETE, `contact_messages/${msg.id}`);
+                          }
+                        }
+                      }}
+                      className="text-red-500 hover:text-red-600 p-2 mt-2"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+                <p className={cn("text-sm leading-relaxed", isDark ? "text-slate-300" : "text-slate-600")}>
+                  {msg.message}
+                </p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12 border-2 border-dashed border-slate-200 dark:border-white/5 rounded-3xl">
+            <Mail className="w-12 h-12 text-slate-500 mx-auto mb-4" />
+            <p className="text-slate-500 font-medium">No messages yet.</p>
+          </div>
+        )}
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
         <div className="lg:col-span-3 relative">
