@@ -10,21 +10,30 @@ console.log("Initializing Firebase with Project ID:", firebaseConfig.projectId);
 console.log("Auth Domain:", firebaseConfig.authDomain);
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const firestore = initializeFirestore(app, {
+const settings = {
   experimentalForceLongPolling: true,
-}, firebaseConfig.firestoreDatabaseId);
+};
 
-// Test Firestore connection
-async function testConnection() {
+const firestore = initializeFirestore(app, settings, firebaseConfig.firestoreDatabaseId);
+
+/**
+ * Optional initialization test. Call this from a component or useEffect to verify connectivity.
+ */
+export async function verifyFirestoreConnection() {
+  if (typeof window === 'undefined') return;
   try {
-    await getDocFromServer(doc(firestore, 'test', 'connection'));
+    const testDoc = doc(firestore, 'test', 'connection');
+    await getDocFromServer(testDoc);
+    console.log("Firestore connection verified successfully.");
+    return true;
   } catch (error) {
-    if (error instanceof Error && error.message.includes('the client is offline')) {
-      console.error("Firestore connection failed: The client is offline. Please check your Firebase configuration.");
+    const msg = error instanceof Error ? error.message : String(error);
+    if (msg.includes('offline') || msg.includes('Could not reach')) {
+      console.warn("Firestore appears to be offline or unreachable:", msg);
     }
+    return false;
   }
 }
-testConnection();
 
 const googleProvider = new GoogleAuthProvider();
 

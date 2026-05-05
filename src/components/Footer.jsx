@@ -21,128 +21,119 @@ export const Footer = () => {
   return (
     <footer className={cn(
       "pt-20 pb-10 px-4 border-t transition-colors duration-300",
-      isDark ? "bg-navy-800/50 border-white/10" : "bg-slate-100 border-slate-200"
+      "bg-navy-900 border-white/5"
     )}>
       <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 mb-16">
           {/* Brand */}
           <div className="space-y-6">
-            <div className="flex items-center gap-2">
-              <div className="w-10 h-10 bg-emerald-600 rounded-lg flex items-center justify-center">
-                <TrendingUp className="text-white w-6 h-6" />
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gold-500 rounded-2xl flex items-center justify-center rotate-3 shadow-lg shadow-gold-500/20">
+                <TrendingUp className="text-navy-950 w-7 h-7" />
               </div>
-              <span className={cn(
-                "text-xl font-bold tracking-tight",
-                isDark ? "text-white" : "text-slate-900"
-              )}>
-                IPO <span className="text-emerald-500">Predictor</span>
-              </span>
+              <div className="flex flex-col">
+                <span className="text-2xl font-black tracking-tighter text-white leading-none">
+                  NEPSE <span className="text-gold-500">IPO</span>
+                </span>
+                <span className="text-[10px] font-bold text-gold-500/80 uppercase tracking-[0.2em]">Predictor Nepal</span>
+              </div>
             </div>
-            <p className={cn(
-              "leading-relaxed",
-              isDark ? "text-slate-400" : "text-slate-600"
-            )}>
-              This website provides a fun and simple estimate of IPO allotment probability based on subscription data. 
-              The results are approximate and for educational purposes only. Since the actual allotment process involves randomization, 
-              real outcomes may differ. This is not financial advice.
+            <p className="text-slate-400 text-sm leading-relaxed max-w-sm">
+              NEPSE’s premier algorithmic prediction engine for IPO allotments. We leverage historical subscription trends and CDSC data to provide the most accurate probability analysis in Nepal.
             </p>
-            <div className="flex flex-col gap-4">
+          </div>
+
+          {/* Navigation & Legal Grid */}
+          <div className="grid grid-cols-2 gap-8">
+            <div>
+              <h4 className="text-gold-500 font-black text-xs uppercase tracking-[0.2em] mb-8">Platform</h4>
+              <ul className="space-y-4">
+                {[
+                  { id: 'home', label: 'Home' },
+                  { id: 'predictor', label: 'Check Allotment' },
+                  { id: 'blog', label: 'IPO News' },
+                  { id: 'education', label: 'Blog' }
+                ].map((link) => (
+                  <li key={link.id}>
+                    <button 
+                      onClick={() => setCurrentPage(link.id)}
+                      className="text-slate-400 hover:text-white transition-colors text-sm font-medium flex items-center gap-2 group"
+                    >
+                      <ArrowRight size={14} className="opacity-0 group-hover:opacity-100 -ml-4 group-hover:ml-0 transition-all text-gold-500" />
+                      {link.label}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <h4 className="text-gold-500 font-black text-xs uppercase tracking-[0.2em] mb-8">Compliance</h4>
+              <ul className="space-y-4">
+                {[
+                  { id: 'privacy', label: 'Privacy Policy' },
+                  { id: 'terms', label: 'Terms & Conditions' },
+                  { id: 'about', label: 'About Us' },
+                  { id: 'contact', label: 'Contact Us' }
+                ].map((link) => (
+                  <li key={link.id}>
+                    <button 
+                      onClick={() => setCurrentPage(link.id)}
+                      className="text-slate-400 hover:text-white transition-colors text-sm font-medium flex items-center gap-2 group"
+                    >
+                      <ArrowRight size={14} className="opacity-0 group-hover:opacity-100 -ml-4 group-hover:ml-0 transition-all text-gold-500" />
+                      {link.label}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          {/* Support */}
+          <div className="space-y-6">
+            <h4 className="text-gold-500 font-black text-xs uppercase tracking-[0.2em] mb-8">Contact & Support</h4>
+            <div className="glass p-6 rounded-[2rem] space-y-4">
+              <div className="flex items-center gap-4 text-slate-300">
+                <div className="w-10 h-10 rounded-xl bg-gold-400/10 flex items-center justify-center text-gold-400">
+                  <Mail className="w-5 h-5" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase">Support Email</span>
+                  <span className="text-sm font-bold">earnrealcashnepal@gmail.com</span>
+                </div>
+              </div>
               <a 
-                href="https://www.facebook.com/share/1BuKk986R6/" 
+                href="https://wa.me/9779804486318" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="flex items-center gap-3 group"
+                className="btn-gold w-full py-4 text-xs flex items-center justify-center gap-2"
               >
-                <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all border border-white/10">
-                  <Facebook className="w-5 h-5" />
-                </div>
-                <span className={cn(
-                  "text-sm font-medium transition-colors",
-                  isDark ? "text-slate-300 group-hover:text-white" : "text-slate-500 group-hover:text-slate-900"
-                )}>
-                  Follow and Support on FB
-                </span>
+                <MessageCircle className="w-4 h-4" /> Message Us (WhatsApp)
               </a>
             </div>
           </div>
-
-          {/* Quick Links */}
-          <div>
-            <h4 className={cn("text-lg font-bold mb-6", isDark ? "text-white" : "text-slate-900")}>Quick Links</h4>
-            <ul className="space-y-4">
-              {[
-                { id: 'about', label: 'About' },
-                { id: 'contact', label: 'Contact' },
-                { id: 'privacy', label: 'Privacy Policy' },
-                { id: 'disclaimer', label: 'Disclaimer' },
-                { id: 'terms', label: 'Terms' },
-                { id: 'blog', label: 'Blog' }
-              ].map((link) => (
-                <li key={link.id}>
-                  <button 
-                    onClick={() => setCurrentPage(link.id)}
-                    className={cn(
-                      "transition-colors capitalize",
-                      isDark ? "text-slate-400 hover:text-emerald-400" : "text-slate-600 hover:text-emerald-600"
-                    )}
-                  >
-                    {link.label}
-                  </button>
-                </li>
-              ))}
-              <li>
-                <a 
-                  href="https://www.facebook.com/share/1BuKk986R6/" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className={cn(
-                    "transition-colors",
-                    isDark ? "text-slate-400 hover:text-emerald-400" : "text-slate-600 hover:text-emerald-600"
-                  )}
-                >
-                  Facebook (IPO/FPO Updates Nepal)
-                </a>
-              </li>
-            </ul>
-          </div>
-
-          {/* Contact */}
-          <div>
-            <h4 className={cn("text-lg font-bold mb-6", isDark ? "text-white" : "text-slate-900")}>Contact Us</h4>
-            <ul className="space-y-6">
-              <li className={cn("flex items-center gap-3", isDark ? "text-slate-400" : "text-slate-600")}>
-                <Mail className="w-5 h-5 text-emerald-500 shrink-0" />
-                <span>earnrealcashnepal@gmail.com</span>
-              </li>
-              <li>
-                <a 
-                  href="https://wa.me/9779804486318" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-3 bg-[#25D366] text-white px-6 py-3 rounded-xl font-bold hover:scale-105 transition-transform"
-                >
-                  <MessageCircle className="w-5 h-5" />
-                  Message Us
-                </a>
-              </li>
-            </ul>
-          </div>
         </div>
 
-        <div className={cn("pt-8 border-t flex flex-col md:flex-row justify-between items-center gap-6", isDark ? "border-white/5" : "border-slate-200")}>
-          <div className="hidden">
-            <h2>NEPSE IPO Allotment Predictor</h2>
-            <p>The best IPO allotment predictor in Nepal. Check your IPO allotment probability for Nepali stocks including Hydropower, Microfinance, and more. Get real-time data-driven insights for NEPSE IPOs.</p>
-            <p>Keywords: NEPSE IPO Allotment Predictor, ipo allotment predictor nepal, nepse ipo result, ipo allotment probability, nepse stock market nepal, share market nepal, ipo result checker nepal</p>
+        <div className="pt-12 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-8">
+          <div className="flex flex-col items-center md:items-start gap-2">
+            <p className="text-xs text-slate-500 font-bold tracking-widest uppercase">
+              © 2026 NEPSE IPO Predictor. Deep Tech from Nepal.
+            </p>
+            <p className="text-[10px] text-slate-700 italic max-w-lg text-center md:text-left">
+              Disclaimer: Results are probabilistic and non-binding. We are not an official CDSC affiliate.
+            </p>
           </div>
-          <p className="text-sm text-slate-500">
-            © 2026 IPO Predictor Nepal. All rights reserved.
-          </p>
-          <div className="flex gap-6 text-xs text-slate-500">
-            <button onClick={() => setCurrentPage('contact')} className={cn("transition-colors", isDark ? "hover:text-white" : "hover:text-slate-900")}>Contact Us</button>
-            <button onClick={() => setCurrentPage('privacy')} className={cn("transition-colors", isDark ? "hover:text-white" : "hover:text-slate-900")}>{t.privacyPolicy}</button>
-            <button onClick={() => setCurrentPage('terms')} className={cn("transition-colors", isDark ? "hover:text-white" : "hover:text-slate-900")}>{t.termsOfService}</button>
-            <button onClick={() => setCurrentPage('disclaimer')} className={cn("transition-colors", isDark ? "hover:text-white" : "hover:text-slate-900")}>{t.disclaimerPage}</button>
+          
+          <div className="flex gap-4">
+            <a href="https://facebook.com" className="w-10 h-10 rounded-full glass flex items-center justify-center hover:bg-gold-500 hover:text-navy-950 transition-all">
+              <Facebook size={18} />
+            </a>
+            <a href="https://twitter.com" className="w-10 h-10 rounded-full glass flex items-center justify-center hover:bg-gold-500 hover:text-navy-950 transition-all">
+              <Twitter size={18} />
+            </a>
+            <a href="https://youtube.com" className="w-10 h-10 rounded-full glass flex items-center justify-center hover:bg-gold-500 hover:text-navy-950 transition-all">
+              <Youtube size={18} />
+            </a>
           </div>
         </div>
       </div>

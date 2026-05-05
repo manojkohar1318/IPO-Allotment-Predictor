@@ -35,6 +35,7 @@ import { BlogListing } from './components/BlogListing';
 import { BlogPost } from './components/BlogPost';
 import { BlogSection } from './components/BlogSection';
 import { HeroSection } from './components/HeroSection';
+import { PredictorGuide } from './components/PredictorGuide';
 import { cn } from './cn';
 import { DUMMY_IPOS } from './constants';
 import { 
@@ -118,6 +119,7 @@ class ErrorBoundary extends React.Component {
     return this.props.children;
   }
 }
+
 
 function AppContent() {
   const { lang, setLang, isDark, setIsDark, currentPage, setCurrentPage, currentSlug, setCurrentSlug } = useApp();
@@ -421,6 +423,8 @@ function AppContent() {
       </section>
 
       <BlogSection isDark={isDark} setCurrentPage={setCurrentPage} setCurrentSlug={setCurrentSlug} />
+
+      <PredictorGuide isDark={isDark} />
 
       {/* FAQ Section */}
       <section className="max-w-4xl mx-auto px-4">

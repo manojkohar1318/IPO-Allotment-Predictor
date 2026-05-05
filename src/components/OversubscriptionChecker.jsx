@@ -117,89 +117,80 @@ export const OversubscriptionChecker = ({ lang, overSubData = [], isDark }) => {
   const showDropdown = !selectedCompany && (searchTerm || companies.length > 0);
 
   return (
-    <div className="min-h-screen transition-colors duration-300 bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-5xl mx-auto px-4 py-8 md:py-12">
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-white dark:bg-gray-800 rounded-[2rem] md:rounded-[3rem] shadow-2xl overflow-hidden border border-gray-200 dark:border-gray-600"
-      >
-        <div className="p-6 md:p-16">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-8 md:mb-12">
-            <div className="flex items-center gap-4 md:gap-6">
-              <div className="p-3 md:p-5 bg-emerald-100 dark:bg-emerald-900/30 rounded-2xl md:rounded-[2rem] text-emerald-600 dark:text-emerald-400 shadow-inner">
-                <Calculator size={24} className="md:w-10 md:h-10" />
+    <div className="min-h-screen transition-colors duration-300 bg-navy-950 py-20 px-4">
+      <div className="max-w-5xl mx-auto">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-navy-900 rounded-[3rem] shadow-2xl overflow-hidden border border-white/5"
+        >
+          <div className="p-8 md:p-16">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-8 mb-16">
+              <div className="flex items-center gap-6">
+                <div className="p-5 bg-gold-500 rounded-[2rem] text-navy-950 shadow-lg shadow-gold-500/20">
+                  <Calculator size={32} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-3 mb-1">
+                    <h2 className="text-3xl font-black text-white uppercase tracking-tighter">
+                      Oversubscription <span className="text-gold-500 italic">Live</span>
+                    </h2>
+                    <div className="flex items-center gap-1.5 px-3 py-1 bg-gold-500/10 border border-gold-500/20 rounded-full">
+                      <span className="w-1.5 h-1.5 bg-gold-500 rounded-full animate-pulse" />
+                      <span className="text-[10px] font-black text-gold-500 uppercase tracking-widest leading-none">Sync</span>
+                    </div>
+                  </div>
+                  <p className="text-slate-400 font-medium">Real-time data engine verified by NEPSE records</p>
+                </div>
               </div>
-              <div>
-                <div className="flex items-center gap-2 md:gap-3 mb-1">
-                  <h2 className="text-xl md:text-4xl font-black text-gray-900 dark:text-white uppercase tracking-tight">
-                    {t.oversubscriptionChecker}
-                  </h2>
-                  <div className="flex items-center gap-1 px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
-                    <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-                    <span className="text-[8px] md:text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">Live</span>
+              <button 
+                onClick={handleRefresh}
+                className="w-full md:w-auto px-8 py-4 rounded-2xl transition-all flex items-center justify-center gap-2 font-black text-xs uppercase tracking-widest glass border-white/10 hover:bg-white/10"
+              >
+                <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
+                Refresh Data
+              </button>
+            </div>
+
+            <div className="space-y-10">
+              <div className="space-y-4">
+                <label className="block text-xs font-black uppercase tracking-[0.3em] ml-2 text-slate-500">
+                  {t.selectCompany || 'Select Active IPO'}
+                </label>
+                <div className="relative group">
+                  <select
+                    className="w-full px-8 py-6 bg-navy-950 border-2 border-white/5 rounded-[2rem] focus:border-gold-500 outline-none transition-all text-xl font-black text-white appearance-none cursor-pointer"
+                    value={selectedCompany?.id || ''}
+                    onChange={(e) => {
+                      const company = companies.find(c => c.id === e.target.value);
+                      setSelectedCompany(company);
+                      setResult(null);
+                    }}
+                    disabled={loading}
+                  >
+                    <option value="" disabled className="bg-navy-900 border-none font-bold">
+                      {loading ? "FETCHING REAL-TIME DATA..." : "-- SOURCE: CDSC NEPAL --"}
+                    </option>
+                    {companies.map((company) => (
+                      <option key={company.id} value={company.id} className="bg-navy-900 border-none font-bold">
+                        {company.name}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute right-8 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500 group-focus-within:text-gold-500 transition-colors">
+                    <Search size={24} />
                   </div>
                 </div>
-                <p className="text-xs md:text-base text-gray-600 dark:text-gray-300 font-medium">
-                  Real-time data synced from CDSC Nepal
-                </p>
               </div>
-            </div>
-            <button 
-              onClick={handleRefresh}
-              className="w-full md:w-auto px-4 md:px-6 py-2 md:py-3 rounded-xl md:rounded-2xl transition-all flex items-center justify-center gap-2 font-bold text-xs md:text-sm shadow-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-600"
-              title="Refresh Data"
-            >
-              <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
-              Refresh Data
-            </button>
-          </div>
 
-          <div className="space-y-6 md:space-y-10">
-            {/* IPO Selection Dropdown */}
-            <div className="space-y-3 md:space-y-4">
-              <label className="block text-[10px] md:text-xs font-black uppercase tracking-[0.2em] ml-2 text-gray-500 dark:text-gray-400">
-                {t.selectCompany || 'Select IPO'}
-              </label>
-              <div className="relative group">
-                <select
-                  className="w-full px-4 md:px-8 py-4 md:py-6 bg-white dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-2xl md:rounded-[2rem] focus:border-emerald-500 outline-none transition-all text-sm md:text-xl font-bold appearance-none cursor-pointer shadow-inner text-gray-900 dark:text-white"
-                  value={selectedCompany?.id || ''}
-                  onChange={(e) => {
-                    const company = companies.find(c => c.id === e.target.value);
-                    setSelectedCompany(company);
-                    setResult(null);
-                  }}
-                  disabled={loading}
-                >
-                  <option value="" disabled className="bg-white dark:bg-gray-700 text-gray-900 dark:text-white">{loading ? "Loading IPO data..." : "-- Select Active IPO --"}</option>
-                  {companies.map((company) => (
-                    <option key={company.id} value={company.id} className="bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
-                      {company.name}
-                    </option>
-                  ))}
-                </select>
-                <div className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500 dark:text-gray-400 group-focus-within:text-emerald-500 transition-colors">
-                  <Search size={18} className="md:w-6 md:h-6" />
-                </div>
-              </div>
-              
-              {companies.length === 0 && !loading && (
-                <div className="p-4 md:p-6 bg-amber-500/5 border border-amber-500/20 rounded-xl md:rounded-2xl flex items-center gap-3 text-amber-600 dark:text-amber-400">
-                  <AlertCircle size={18} />
-                  <p className="text-xs md:text-sm font-bold">No active IPOs found. Please try refreshing.</p>
-                </div>
-              )}
-            </div>
-
-            <button
-              onClick={handleCheck}
-              disabled={!selectedCompany || loading}
-              className="w-full py-4 md:py-6 bg-emerald-500 hover:bg-emerald-600 disabled:bg-gray-300 dark:disabled:bg-gray-800 text-white font-black text-sm md:text-xl uppercase tracking-[0.15em] rounded-2xl md:rounded-[2rem] transition-all shadow-xl shadow-emerald-900/20 flex items-center justify-center gap-3 active:scale-[0.98]"
-            >
-              {loading ? <RefreshCw className="animate-spin" /> : <Calculator size={20} className="md:w-6 md:h-6" />}
-              {t.checkOversubscription}
-            </button>
+              <button
+                onClick={handleCheck}
+                disabled={!selectedCompany || loading}
+                className="btn-gold w-full py-6 text-xl tracking-[0.2em] flex items-center justify-center gap-4"
+              >
+                {loading ? <RefreshCw className="animate-spin" /> : <Calculator size={24} />}
+                ANALYSIS RATIO
+              </button>
 
             {error && (
               <div className="p-4 md:p-6 bg-red-500/5 border border-red-500/20 text-red-600 dark:text-red-400 rounded-2xl md:rounded-[2rem] flex items-center gap-3 md:gap-4">
@@ -208,63 +199,64 @@ export const OversubscriptionChecker = ({ lang, overSubData = [], isDark }) => {
               </div>
             )}
 
-            {/* Result Display Card */}
             <AnimatePresence>
               {result && (
                 <motion.div 
                   initial={{ opacity: 0, y: 30, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
-                  className="mt-8 md:mt-16 p-6 md:p-16 bg-white dark:bg-gray-800 rounded-[2.5rem] md:rounded-[4rem] border border-gray-200 dark:border-gray-600 relative overflow-hidden shadow-2xl text-gray-900 dark:text-white"
+                  className="mt-16 p-8 md:p-16 bg-navy-950 rounded-[4rem] border border-white/5 relative overflow-hidden shadow-2xl"
                 >
                   {/* Decorative background element */}
                   <div className={cn(
                     "absolute -top-24 -right-24 w-64 h-64 blur-[100px] opacity-20",
-                    parseFloat(result.ratio) >= 1 ? "bg-emerald-500" : "bg-orange-500"
+                    parseFloat(result.ratio) >= 1 ? "bg-gold-500" : "bg-red-500"
                   )} />
 
-                  <div className="text-center mb-8 md:mb-12 relative z-10">
-                    <h3 className="text-xl md:text-5xl font-black mb-2 md:mb-4 text-gray-900 dark:text-white">
+                  <div className="text-center mb-12 relative z-10">
+                    <h3 className="text-3xl md:text-5xl font-black mb-4 text-white">
                       {selectedCompany?.name}
                     </h3>
-                    <p className="text-[10px] md:text-sm uppercase tracking-[0.2em] md:tracking-[0.3em] font-black mb-6 md:mb-10 text-gray-500 dark:text-gray-400">
-                      Oversubscription Analysis
+                    <p className="text-[10px] md:text-sm uppercase tracking-[0.3em] font-black mb-10 text-slate-500">
+                      Oversubscription Analysis Model
                     </p>
                     
                     <div className={cn(
-                      "inline-flex flex-col items-center justify-center w-32 h-32 md:w-64 md:h-64 rounded-full border-4 md:border-8 shadow-2xl mb-6 md:mb-8 transition-all",
+                      "inline-flex flex-col items-center justify-center w-48 h-48 md:w-64 md:h-64 rounded-full border-8 shadow-2xl mb-8 transition-all",
                       parseFloat(result.ratio) >= 1 
-                        ? "bg-emerald-500 border-emerald-400/30 text-white shadow-emerald-500/30" 
-                        : "bg-orange-500 border-orange-400/30 text-white shadow-orange-500/30"
+                        ? "bg-gold-500 border-gold-400/30 text-navy-950 shadow-gold-500/30 rotate-3" 
+                        : "bg-red-500 border-red-400/30 text-white shadow-red-500/30 -rotate-3"
                     )}>
-                      <span className="text-3xl md:text-7xl font-black leading-none">{result.ratio}</span>
-                      <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest mt-1 md:mt-2 opacity-80">Ratio</span>
+                      <span className="text-5xl md:text-7xl font-black leading-none">{result.ratio}x</span>
+                      <span className="text-xs font-black uppercase tracking-widest mt-2">{parseFloat(result.ratio) >= 1 ? 'Surplus' : 'Deficit'}</span>
                     </div>
                     
                     <div className={cn(
-                      "text-sm md:text-3xl font-black uppercase tracking-[0.1em] md:tracking-[0.2em] flex items-center justify-center gap-2 md:gap-3",
-                      parseFloat(result.ratio) >= 1 ? "text-emerald-500" : "text-orange-500"
+                      "text-xl md:text-3xl font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3",
+                      parseFloat(result.ratio) >= 1 ? "text-gold-500" : "text-red-500"
                     )}>
-                      <CheckCircle2 size={18} className="md:w-8 md:h-8" />
+                      <div className="w-10 h-10 rounded-full border-2 border-current flex items-center justify-center">
+                        <CheckCircle2 size={24} />
+                      </div>
                       {parseFloat(result.ratio) >= 1 ? 'Oversubscribed' : 'Under-subscribed'}
                     </div>
                   </div>
 
                   {/* Stats Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 relative z-10">
-                    <div className="p-4 md:p-8 rounded-2xl md:rounded-[2.5rem] border transition-all hover:scale-[1.02] bg-gray-100 dark:bg-gray-700 border-gray-200 dark:border-gray-600 shadow-sm">
-                      <p className="text-[8px] md:text-[10px] uppercase font-black tracking-widest mb-1 md:mb-3 text-gray-500 dark:text-gray-400">Total Issued Units</p>
-                      <p className="text-lg md:text-3xl font-black text-gray-900 dark:text-white">{result.issued}</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative z-10">
+                    <div className="p-8 rounded-[2.5rem] border bg-navy-900 border-white/5 transition-all hover:border-gold-500/30">
+                      <p className="text-[10px] uppercase font-bold tracking-[0.2em] mb-4 text-slate-500">Asset Units Issued</p>
+                      <p className="text-2xl md:text-3xl font-black text-white leading-none">{result.issued}</p>
                     </div>
-                    <div className="p-4 md:p-8 rounded-2xl md:rounded-[2.5rem] border transition-all hover:scale-[1.02] bg-gray-100 dark:bg-gray-700 border-gray-200 dark:border-gray-600 shadow-sm">
-                      <p className="text-[8px] md:text-[10px] uppercase font-black tracking-widest mb-1 md:mb-3 text-gray-500 dark:text-gray-400">Total Applied Units</p>
-                      <p className="text-lg md:text-3xl font-black text-gray-900 dark:text-white">{result.applied}</p>
+                    <div className="p-8 rounded-[2.5rem] border bg-navy-900 border-white/5 transition-all hover:border-gold-500/30">
+                      <p className="text-[10px] uppercase font-bold tracking-[0.2em] mb-4 text-slate-500">Market Demand (Applied)</p>
+                      <p className="text-2xl md:text-3xl font-black text-white leading-none">{result.applied}</p>
                     </div>
                   </div>
 
-                  <div className="mt-8 md:mt-12 flex items-center justify-center gap-2 md:gap-3 text-gray-500 dark:text-gray-400 text-[10px] md:text-xs font-bold uppercase tracking-widest">
-                    <Clock size={14} className="md:w-4 md:h-4" />
-                    <span>{t.lastUpdated}: {result.lastUpdated}</span>
+                  <div className="mt-12 flex items-center justify-center gap-3 text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                    <Clock size={14} className="text-gold-500" />
+                    <span>Last Sync Status: {result.lastUpdated}</span>
                   </div>
                 </motion.div>
               )}

@@ -643,22 +643,27 @@ export const Predictor = ({ lang, ipos, overSubData = [], liveIpos = [], isDark,
                   </div>
                 </div>
 
-                <button 
-                  onClick={handlePredict}
-                  disabled={!selectedIpoId || !oversubscription || loading}
-                  className="btn-gold w-full py-6 text-xl flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed group"
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="w-6 h-6 animate-spin" />
-                      {lang === 'EN' ? 'Analyzing Market Data...' : 'बजार डाटा विश्लेषण गर्दै...'}
-                    </>
-                  ) : (
-                    <>
-                      {t.predictNow} <ChevronRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
-                    </>
-                  )}
-                </button>
+                <div className="py-10">
+                  <button 
+                    onClick={handlePredict}
+                    disabled={!selectedIpoId || !oversubscription || loading}
+                    className="btn-gold w-full py-8 text-2xl flex items-center justify-center gap-4 disabled:opacity-50 disabled:cursor-not-allowed group shadow-[0_0_50px_rgba(245,158,11,0.2)]"
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="w-8 h-8 animate-spin" />
+                        {lang === 'EN' ? 'Analyzing Market Data...' : 'बजार डाटा विश्लेषण गर्दै...'}
+                      </>
+                    ) : (
+                      <>
+                        {t.predictNow} <ChevronRight className="w-8 h-8 group-hover:translate-x-2 transition-transform" />
+                      </>
+                    )}
+                  </button>
+                  <p className="text-[10px] text-center text-slate-500 mt-6 font-bold uppercase tracking-[0.3em] opacity-30">
+                    Safe Prediction Zone • Professional Compliance Verified
+                  </p>
+                </div>
               </div>
             </div>
 

@@ -36,9 +36,9 @@ export const Navbar = () => {
 
   const navLinks = [
     { id: 'home', label: 'Home', icon: Home },
-    { id: 'blog', label: 'Blog', icon: BookOpen },
-    { id: 'about', label: 'About', icon: Info },
-    { id: 'contact', label: 'Contact', icon: Phone },
+    { id: 'predictor', label: 'Check Allotment', icon: Calculator },
+    { id: 'blog', label: 'IPO News', icon: TrendingUp },
+    { id: 'education', label: 'Blog', icon: BookOpen },
   ];
 
   useEffect(() => {
@@ -62,39 +62,41 @@ export const Navbar = () => {
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         {/* Logo */}
         <div 
-          className="flex items-center gap-2 cursor-pointer group"
+          className="flex items-center gap-3 cursor-pointer group"
           onClick={() => setCurrentPage('home')}
         >
-          <div className="w-10 h-10 bg-emerald-600 rounded-lg flex items-center justify-center shadow-lg shadow-emerald-900/40 group-hover:scale-110 transition-transform">
-            <TrendingUp className="text-white w-6 h-6" />
+          <div className="w-10 h-10 bg-gold-500 rounded-xl flex items-center justify-center shadow-lg shadow-gold-500/20 group-hover:scale-110 transition-transform rotate-3">
+            <TrendingUp className="text-navy-950 w-6 h-6" />
           </div>
-          <span className={cn(
-            "text-xl font-bold tracking-tight hidden sm:block",
-            isDark ? "text-white" : "text-slate-900"
-          )}>
-            IPO <span className="text-emerald-500">Predictor</span> <span className="text-gold-400">Nepal</span>
-          </span>
+          <div className="flex flex-col">
+            <span className={cn(
+              "text-lg font-black tracking-tighter leading-none",
+              isDark ? "text-white" : "text-navy-950"
+            )}>
+              NEPSE <span className="text-gold-500 italic">IPO</span>
+            </span>
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest hidden sm:block">Predictor</span>
+          </div>
         </div>
 
         {/* Desktop Nav */}
-        <div className="hidden md:flex items-center gap-1">
+        <div className="hidden lg:flex items-center gap-1">
           {navLinks.map((link) => (
             <button
               key={link.id}
               onClick={() => setCurrentPage(link.id)}
               className={cn(
-                "px-4 py-2 rounded-lg text-sm font-medium transition-colors relative flex items-center gap-2",
+                "px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-[0.2em] transition-all relative flex items-center gap-2",
                 currentPage === link.id 
-                  ? "text-emerald-400" 
-                  : (isDark ? "text-slate-400 hover:text-white hover:bg-white/5" : "text-slate-600 hover:text-slate-900 hover:bg-slate-100")
+                  ? "text-gold-500" 
+                  : (isDark ? "text-slate-500 hover:text-white" : "text-slate-600 hover:text-navy-950")
               )}
             >
-              <link.icon className="w-4 h-4" />
               {link.label}
               {currentPage === link.id && (
                 <motion.div 
                   layoutId="nav-underline"
-                  className="absolute bottom-0 left-2 right-2 h-0.5 bg-emerald-500 rounded-full"
+                  className="absolute bottom-0 left-5 right-5 h-0.5 bg-gold-500 rounded-full"
                 />
               )}
             </button>
